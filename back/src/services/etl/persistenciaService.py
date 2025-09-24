@@ -10,12 +10,13 @@ from src.repositories.registrosFS.registroC170Repository import RegistroC170Repo
 from src.repositories.registrosFS.registroC190Repository import RegistroC190Repository
 
 class Persistencia(threading.Thread):
-    def __init__(self, fila: queue.PriorityQueue, session, empresa_id):
+    def __init__(self, fila: queue.PriorityQueue, session, empresa_id, buffer_size=10000):
         super().__init__()
         self.fila = fila
         self.session = session
         self.empresa_id = empresa_id
         self.daemon = True
+        self.buffer_size = buffer_size
 
         self.repo0000 = Registro0000Repository(session)
         self.repo0150 = Registro0150Repository(session)
@@ -25,7 +26,6 @@ class Persistencia(threading.Thread):
         self.repoC190 = RegistroC190Repository(session)
 
         self.mapa_documentos = {}
-
         self.prioridades = {
             "0000": 1,
             "0150": 2,
