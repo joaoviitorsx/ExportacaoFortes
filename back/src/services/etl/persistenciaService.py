@@ -9,16 +9,13 @@ from src.repositories.registrosFS.registroC100Repository import RegistroC100Repo
 from src.repositories.registrosFS.registroC170Repository import RegistroC170Repository
 from src.repositories.registrosFS.registroC190Repository import RegistroC190Repository
 
-persistenciaSemaphore = threading.Semaphore(2)
-
 class Persistencia(threading.Thread):
-    def __init__(self, fila: queue.PriorityQueue, session, empresa_id, semaphore=persistenciaSemaphore):
+    def __init__(self, fila: queue.PriorityQueue, session, empresa_id):
         super().__init__()
         self.fila = fila
         self.session = session
         self.empresa_id = empresa_id
         self.daemon = True
-        self.semaphore = semaphore
 
         self.repo0000 = Registro0000Repository(session)
         self.repo0150 = Registro0150Repository(session)
@@ -48,22 +45,19 @@ class Persistencia(threading.Thread):
                     self.fila.task_done()
                     break
 
-                prioridade, tipo, contador, dados = lote
-
                 try:
-                    with self.semaphore:
-                        if tipo == "0000":
-                            self._salvar0000(dados)
-                        elif tipo == "0150":
-                            self._salvar0150(dados)
-                        elif tipo == "0200":
-                            self._salvar0200(dados)
-                        elif tipo == "C100":
-                            self._salvarC100(dados)
-                        elif tipo == "C170":
-                            self._salvarC170(dados)
-                        elif tipo == "C190":
-                            self._salvarC190(dados)
+                    if tipo == "0000":
+                        self.salvarRegistro0000(dados)
+                    elif tipo == "0150":
+                        self.salvarRegistro0150(dados)
+                    elif tipo == "0200":
+                        self.salvarRegistro0200(dados)
+                    elif tipo == "C100":
+                        self.salvarRegistroC100(dados)
+                    elif tipo == "C170":
+                        self.salvarRegistroC170(dados)
+                    elif tipo == "C190":
+                        self.salvarRegistroC190(dados)
                 except Exception as e:
                     print(f"[ERRO] Falha ao salvar lote {tipo}: {e}")
 
@@ -71,19 +65,19 @@ class Persistencia(threading.Thread):
         finally:
             self.session.close()
 
-    def _salvar0000(self, dados):
+    def salvarRegistro0000(self, dados):
         print(f"[INFO] Salvando 0000 ({len(dados)})")
         self.repo0000.salvamento(dados)
 
-    def _salvar0150(self, dados):
+    def salvarRegistro0150(self, dados):
         print(f"[INFO] Salvando 0150 ({len(dados)})")
         self.repo0150.salvamento(dados)
 
-    def _salvar0200(self, dados):
+    def salvarRegistro0200(self, dados):
         print(f"[INFO] Salvando 0200 ({len(dados)})")
         self.repo0200.salvamento(dados)
 
-    def _salvarC100(self, dados):
+    def salvarRegistroC100(self, dados):
         print(f"[INFO] Salvando C100 ({len(dados)})")
         self.repoC100.salvamento(dados)
 
@@ -103,7 +97,7 @@ class Persistencia(threading.Thread):
                     "empresa_id": empresa_id,
                 }
 
-    def _salvarC170(self, dados):
+    def salvarRegistroC170(self, dados):
         print(f"[INFO] Salvando C170 ({len(dados)})")
         for registro in dados:
             num_doc = str(registro.get("num_doc", "")).zfill(9)
@@ -116,7 +110,7 @@ class Persistencia(threading.Thread):
 
         self.repoC170.salvamento(dados)
 
-    def _salvarC190(self, dados):
+    def salvarRegistroC190(self, dados):
         print(f"[INFO] Salvando C190 ({len(dados)})")
         for registro in dados:
             num_doc = str(registro.get("num_doc", "")).zfill(9)
