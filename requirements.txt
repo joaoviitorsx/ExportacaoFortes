@@ -2,3 +2,4 @@ SQLAlchemy
 PyMySQL
 pandas
 python-dotenv
+aiohttp
