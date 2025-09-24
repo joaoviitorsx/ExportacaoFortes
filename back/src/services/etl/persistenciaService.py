@@ -28,8 +28,6 @@ class Persistencia(threading.Thread):
         self.repoC190 = RegistroC190Repository(session)
 
         self.mapa_documentos = {}
-        self.buffers = { "0000": [], "0150": [], "0200": [], "C100": [], "C170": [], "C190": [] }
-        self.buffersMax = 10000
 
         self.prioridades = {
             "0000": 1,
@@ -72,7 +70,7 @@ class Persistencia(threading.Thread):
                 self.fila.task_done()
         finally:
             self.session.close()
-    
+
     def _salvar0000(self, dados):
         print(f"[INFO] Salvando 0000 ({len(dados)})")
         self.repo0000.salvamento(dados)

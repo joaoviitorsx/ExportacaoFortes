@@ -25,7 +25,7 @@ class Registro0150Repository:
                 if_exists="append",
                 index=False,
                 method="multi",
-                chunksize=5000
+                chunksize=10000
             )
         except Exception as e:
             self.session.rollback()
