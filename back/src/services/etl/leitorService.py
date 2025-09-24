@@ -55,17 +55,17 @@ class LeitorService:
                                     s.set_context(contexto["periodo"], contexto["filial"])
 
                                 if len(self.s0000.lote) >= self.buffer_size:
-                                    self._enviarLote("0000", self.s0000.lote)
+                                    self.enviarRegistros("0000", self.s0000.lote)
 
                             elif tipo == "0150":
                                 self.s0150.processar(campos)
                                 if len(self.s0150.lote) >= self.buffer_size:
-                                    self._enviarLote("0150", self.s0150.lote)
+                                    self.enviarRegistros("0150", self.s0150.lote)
 
                             elif tipo == "0200":
                                 self.s0200.processar(campos)
                                 if len(self.s0200.lote) >= self.buffer_size:
-                                    self._enviarLote("0200", self.s0200.lote)
+                                    self.enviarRegistros("0200", self.s0200.lote)
 
                             elif tipo == "C100":
                                 c100Atual = self.sC100.processar(campos)
@@ -74,17 +74,17 @@ class LeitorService:
                                 self.sC190.setDocumentos(mapa)
 
                                 if len(self.sC100.lote) >= self.buffer_size:
-                                    self._enviarLote("C100", self.sC100.lote)
+                                    self.enviarRegistros("C100", self.sC100.lote)
 
                             elif tipo == "C170" and c100Atual:
                                 self.sC170.processar(campos, num_doc=c100Atual["num_doc"])
                                 if len(self.sC170.lote) >= self.buffer_size:
-                                    self._enviarLote("C170", self.sC170.lote)
+                                    self.enviarRegistros("C170", self.sC170.lote)
 
                             elif tipo == "C190" and c100Atual:  
                                 self.sC190.processar(campos, num_doc=c100Atual["num_doc"])
                                 if len(self.sC190.lote) >= self.buffer_size:
-                                    self._enviarLote("C190", self.sC190.lote)
+                                    self.enviarRegistros("C190", self.sC190.lote)
 
                         except Exception as e:
                             # print(f"[ERRO] Falha ao processar linha {tipo}: {e}")
@@ -96,24 +96,24 @@ class LeitorService:
                 print(f"[ERRO] Falha ao abrir arquivo {arquivo}: {e}")
                 continue
 
-        self._enviarLote("0000", self.s0000.lote)
-        self._enviarLote("0150", self.s0150.lote)
-        self._enviarLote("0200", self.s0200.lote)
-        self._enviarLote("C100", self.sC100.lote)
-        self._enviarLote("C170", self.sC170.lote)
-        self._enviarLote("C190", self.sC190.lote)
+        self.enviarRegistros("0000", self.s0000.lote)
+        self.enviarRegistros("0150", self.s0150.lote)
+        self.enviarRegistros("0200", self.s0200.lote)
+        self.enviarRegistros("C100", self.sC100.lote)
+        self.enviarRegistros("C170", self.sC170.lote)
+        self.enviarRegistros("C190", self.sC190.lote)
 
         print(f"[INFO] Leitura concluída: {os.path.basename(arquivo)}")
 
-    def _enviarLote(self, tipo, lote):
+    def enviarRegistros(self, tipo, lote):
         if lote:
-            prioridade = self._definirPrioridade(tipo)
+            prioridade = self.prioridade(tipo)
             LeitorService.contador += 1
             self.fila.put((prioridade, tipo,LeitorService.contador, lote.copy()))
             print(f"[DEBUG] Lote enviado: {tipo} ({len(lote)} registros)")
             lote.clear()
 
-    def _definirPrioridade(self, tipo):
+    def prioridade(self, tipo):
         if tipo in ["0000", "0150", "0200"]:
             return 1
         elif tipo == "C100":
