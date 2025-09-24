@@ -1,15 +1,7 @@
 import pandas as pd
 from datetime import datetime
-from src.utils.sanitizacao import parseDecimal
+from src.utils.sanitizacao import parseDecimal, parseDate
 from src.services.etl.validadorService import ValidadorService
-
-def parse_date(valor: str):
-    if not valor or len(valor) != 8:
-        return None
-    try:
-        return datetime.strptime(valor, "%d%m%Y").date()
-    except ValueError:
-        return None
 
 class RegistroC100Service:
     def __init__(self, session, empresa_id):
@@ -42,8 +34,8 @@ class RegistroC100Service:
             "ser": partes[6],
             "num_doc": partes[7],
             "chv_nfe": partes[8],
-            "dt_doc": parse_date(partes[9]),
-            "dt_e_s": parse_date(partes[10]),
+            "dt_doc": parseDate(partes[9]),
+            "dt_e_s": parseDate(partes[10]),
             "vl_doc": parseDecimal(partes[11]),
             "ind_pgto": partes[12],
             "vl_desc": parseDecimal(partes[13]),
@@ -74,10 +66,14 @@ class RegistroC100Service:
             "ind_oper": partes[1],
             "cod_part": partes[3],
             "chv_nfe": partes[8],
-            "dt_doc": parse_date(partes[9]),
+            "dt_doc": parseDate(partes[9]),
         }
 
-        self.lote.append(dados)
+        ok, erros =  ValidadorService.validarRegistroC100(dados)
+        if ok:
+            self.lote.append(dados)
+        else:
+            return
 
         return {
             "num_doc": num_doc,

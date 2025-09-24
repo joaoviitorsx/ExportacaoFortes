@@ -43,7 +43,12 @@ class Registro0200Service:
             "empresa_id": self.empresa_id,
             "ativo": True
         }
-        self.lote.append(dados)
+        ok, erros = ValidadorService.validarRegistro0200(dados)
+        if ok:
+            self.lote.append(dados)
+        else:
+            return
+
 
     def toDataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.lote)

@@ -100,7 +100,11 @@ class RegistroC170Service:
         if not validarEstruturaC170(list(dados.values())):
             return None
 
-        self.lote.append(dados)
+        ok, erros = ValidadorService.validarRegistroC170(dados)
+        if ok:
+            self.lote.append(dados)
+        else:
+            return
 
     def toDataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.lote)

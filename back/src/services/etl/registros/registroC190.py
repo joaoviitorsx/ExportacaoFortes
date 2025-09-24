@@ -43,7 +43,12 @@ class RegistroC190Service:
             "num_doc": num_doc,   # chave de vínculo
             "ativo": True,
         }
-        self.lote.append(dados)
-
+        
+        ok, erros = ValidadorService.validarRegistroC190(dados)
+        if ok:
+            self.lote.append(dados)
+        else:
+            return
+        
     def toDataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.lote)

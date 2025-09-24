@@ -46,8 +46,13 @@ class Registro0000Service:
             "empresa_id": self.empresa_id,
             "ativo": True
         }
+        ok, erros = ValidadorService.validarRegistro0000(dados)
+        if ok:
+            self.lote.append(dados)
+        else:
+            return
 
-        self.lote.append(dados)
+        #self.lote.append(dados)
 
     def get_context(self):
         return {

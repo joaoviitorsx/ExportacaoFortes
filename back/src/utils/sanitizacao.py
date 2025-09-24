@@ -152,3 +152,11 @@ def parseDecimal(valor: str) -> Optional[float]:
         return float(str(valor).replace(",", "."))
     except ValueError:
         return None
+
+def parseDate(valor: str):
+    if not valor or len(valor) != 8:
+        return None
+    try:
+        return datetime.strptime(valor, "%d%m%Y").date()
+    except ValueError:
+        return None
