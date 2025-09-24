@@ -1,6 +1,10 @@
 import re
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
+
+# regex pré-compiladas
+RE_NUMERO = re.compile(r"^\d+([,\.]\d+)?$")
+RE_UNIDADE_ALFA = re.compile(r"^([A-Za-z]+)(\d+)?$")
 
 TAMANHOS_MAXIMOS = {
     "unid": 2,
@@ -13,15 +17,15 @@ TAMANHOS_MAXIMOS = {
     "nome": 100,
 }
 
-def limparAliquota(valor):
+def limparAliquota(valor: Optional[str]) -> Optional[float]:
     if not valor:
         return None
-    valor = str(valor).strip().replace("%", "").replace(",", ".")
+    s = str(valor).strip().replace("%", "").replace(",", ".")
     try:
-        num = float(valor)
-        return "0%" if num == 0 else f"{num:.2f}%"
+        num = float(s)
+        return 0.0 if num == 0 else round(num, 2)
     except ValueError:
-        v = valor.upper()
+        v = s.upper()
         if v in {"ST", "ISENTO", "PAUTA"}:
             return v
         return None
@@ -29,24 +33,20 @@ def limparAliquota(valor):
 def truncar(valor, limite):
     if valor is None:
         return None
-    s = str(valor)
-    return s[:limite]
+    return str(valor).strip()[:limite]
 
 def corrigirUnidade(valor):
     if not valor:
         return "UN"
-    s = str(valor)
-
-    if re.match(r"^\d+[,\.]\d+$", s) or re.match(r"^\d+$", s):
+    s = str(valor).strip().upper()
+    if RE_NUMERO.match(s):
         return "UN"
-
-    m = re.match(r"^([A-Za-z]+)(\d+)", s)
+    m = RE_UNIDADE_ALFA.match(s)
     if m:
-        return m.group(1)
-
+        return m.group(1)[:3]
     return s[:3] if len(s) > 3 else s
 
-def corrigirCstIcms(valor):
+def corrigirCstIcms(valor: Optional[str]) -> Optional[str]:
     if not valor:
         return "00"
     s = str(valor).strip().replace(",", ".")
@@ -55,63 +55,54 @@ def corrigirCstIcms(valor):
             return str(int(float(s))).zfill(2)[:2]
         except ValueError:
             return "00"
-    return s[:2]
+    return s[:2] if s[:2].isdigit() else "00"
 
 def corrigirCfop(valor: Optional[str]) -> Optional[str]:
     if not valor:
         return None
-    
     s = re.sub(r"\D", "", str(valor))
-    if len(s) > 4:
-        s = s[:4]
-    if len(s) < 4:
-        s = s.zfill(4)
+    if len(s) != 4:
+        return None
     return s
 
 def corrigirIndMov(valor):
-    if not valor:
-        return "0"
-    s = str(valor)
-    return s[:1] if len(s) > 1 else s
+    return str(valor)[0] if valor else "0"
 
 def validarEstruturaC170(dados: list) -> bool:
     try:
         if not dados or len(dados) < 43:
             return False
-        periodo = dados[0]
-        filial = dados[40]
-        num_doc = dados[39]
-        return bool(periodo and filial and num_doc)
+        return all([dados[0], dados[39], dados[40]])
     except Exception:
         return False
 
 def sanitizarCampo(campo, valor):
-    def _trunc(tam):
-        return lambda v: truncar(v, tam)
-
-    def _zfill2(v):
-        return str(v).zfill(2)[:2] if v is not None else "00"
-
     def _numero(v):
-        return str(v).replace(",", ".") if isinstance(v, str) else v
+        if v is None or v == "":
+            return None
+        try:
+            return float(str(v).replace(",", "."))
+        except ValueError:
+            return None
 
     regras = {
-        "cod_item": _trunc(60),
-        "descr_item": _trunc(255),
-        "descr_compl": _trunc(255),
-        "cod_cta": _trunc(255),
-        "cod_nat": _trunc(11),
-        "cod_part": _trunc(60),
-        "nome": _trunc(100),
-        "reg": _trunc(4),
+        "cod_item": lambda v: truncar(v, 60),
+        "descr_item": lambda v: truncar(v, 255),
+        "descr_compl": lambda v: truncar(v, 255),
+        "cod_cta": lambda v: truncar(v, 255),
+        "cod_nat": lambda v: truncar(v, 11),
+        "cod_part": lambda v: truncar(v, 60),
+        "nome": lambda v: truncar(v, 100),
+        "reg": lambda v: truncar(v, 4),
 
         "unid": corrigirUnidade,
         "unid_inv": corrigirUnidade,
         "ind_mov": corrigirIndMov,
-        "cod_mod": _zfill2,
+        "cod_mod": lambda v: str(v).zfill(2)[:2] if v else "00",
         "cst_icms": corrigirCstIcms,
         "cfop": corrigirCfop,
 
+        # numéricos
         "vl_item": _numero,
         "vl_desc": _numero,
         "vl_merc": _numero,
@@ -133,11 +124,10 @@ def sanitizarCampo(campo, valor):
         "aliq_pis_reais": _numero,
         "aliq_cofins_reais": _numero,
     }
-
     try:
         return regras.get(campo, lambda v: v)(valor)
     except Exception:
-        return valor
+        return None
 
 def sanitizarRegistro(registro_dict: dict) -> dict:
     return {campo: sanitizarCampo(campo, valor) for campo, valor in registro_dict.items()}
@@ -147,18 +137,18 @@ def calcularPeriodo(dt_ini_0000: str) -> str:
         return "00/0000"
     return f"{dt_ini_0000[2:4]}/{dt_ini_0000[4:]}"
 
-def formatarData(data_str: str) -> str | None:
+def formatarData(data_str: str) -> Optional[date]:
     if not data_str or len(data_str) != 8:
         return None
     try:
-        return datetime.strptime(data_str, "%d%m%Y").date().isoformat()
+        return datetime.strptime(data_str, "%d%m%Y").date()
     except ValueError:
         return None
-    
-def parseDecimal(valor: str):
+
+def parseDecimal(valor: str) -> Optional[float]:
     if not valor:
         return None
     try:
-        return float(valor.replace(",", "."))
+        return float(str(valor).replace(",", "."))
     except ValueError:
         return None

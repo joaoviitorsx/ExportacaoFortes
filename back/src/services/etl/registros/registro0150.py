@@ -1,6 +1,6 @@
 import pandas as pd
 from src.utils.siglas import obterUF
-from src.utils.sanitizacao import calcularPeriodo
+from src.services.etl.validadorService import ValidadorService
 
 class Registro0150Service:
     def __init__(self, session, empresa_id):

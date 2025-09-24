@@ -1,5 +1,6 @@
 import pandas as pd
 from src.utils.sanitizacao import sanitizarCampo
+from src.services.etl.validadorService import ValidadorService
 
 class Registro0200Service:
     def __init__(self, session, empresa_id):
@@ -24,14 +25,7 @@ class Registro0200Service:
         if cod_item is not None:
             cod_item = cod_item.lstrip("0") or "0"
 
-        aliq_icms = None
-        if partes[11]:
-            try:
-                aliq_icms = float(partes[11].replace(",", "."))
-            except ValueError:
-                aliq_icms = None
-
-        registro = {
+        dados = {
             "reg": partes[0],
             "cod_item": sanitizarCampo("cod_item", cod_item),
             "descr_item": sanitizarCampo("descr_item", partes[2]),
@@ -43,14 +37,13 @@ class Registro0200Service:
             "ex_ipi": partes[8],
             "cod_gen": partes[9],
             "cod_list": partes[10],
-            "aliq_icms": aliq_icms,
+            "aliq_icms": sanitizarCampo("aliq_icms", partes[11]) if partes[11] not in (None, '', ' ') else 0.00,
             "cest": partes[12],
             "periodo": self.periodo,
             "empresa_id": self.empresa_id,
             "ativo": True
         }
-
-        self.lote.append(registro)
+        self.lote.append(dados)
 
     def toDataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.lote)

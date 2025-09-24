@@ -1,9 +1,9 @@
 import pandas as pd
 from datetime import datetime
 from src.utils.sanitizacao import parseDecimal
+from src.services.etl.validadorService import ValidadorService
 
 def parse_date(valor: str):
-    """Converte string DDMMAAAA em date ou None."""
     if not valor or len(valor) != 8:
         return None
     try:
@@ -32,7 +32,7 @@ class RegistroC100Service:
     def processar(self, partes: list[str]):
         partes = self.sanitizarPartes(partes)
 
-        registro = {
+        dados = {
             "reg": partes[0],
             "ind_oper": partes[1],
             "ind_emit": partes[2],
@@ -77,11 +77,11 @@ class RegistroC100Service:
             "dt_doc": parse_date(partes[9]),
         }
 
-        self.lote.append(registro)
+        self.lote.append(dados)
 
         return {
             "num_doc": num_doc,
-            "dt_doc": registro["dt_doc"],
+            "dt_doc": dados["dt_doc"],
             "chv_nfe": partes[8],
         }
 

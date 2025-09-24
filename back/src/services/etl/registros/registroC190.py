@@ -1,5 +1,6 @@
 import pandas as pd
 from src.utils.sanitizacao import parseDecimal
+from src.services.etl.validadorService import ValidadorService
 
 class RegistroC190Service:
     def __init__(self, session, empresa_id):
@@ -24,7 +25,7 @@ class RegistroC190Service:
         partes = self.sanitizarPartes(partes)
         num_doc = str(num_doc).zfill(9)
 
-        registro = {
+        dados = {
             "empresa_id": self.empresa_id,
             "periodo": self.periodo,
             "reg": partes[0],
@@ -42,8 +43,7 @@ class RegistroC190Service:
             "num_doc": num_doc,   # chave de vínculo
             "ativo": True,
         }
-
-        self.lote.append(registro)
+        self.lote.append(dados)
 
     def toDataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.lote)

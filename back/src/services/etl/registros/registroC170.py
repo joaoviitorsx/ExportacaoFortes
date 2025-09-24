@@ -1,15 +1,11 @@
 import pandas as pd
-from src.repositories.registrosFS.registroC170Repository import RegistroC170Repository
-from src.utils.sanitizacao import (
-    truncar, corrigirUnidade, corrigirIndMov, corrigirCstIcms,
-    validarEstruturaC170, TAMANHOS_MAXIMOS, parseDecimal
-)
+from src.services.etl.validadorService import ValidadorService  
+from src.utils.sanitizacao import truncar, corrigirUnidade, corrigirIndMov, corrigirCstIcms, validarEstruturaC170, TAMANHOS_MAXIMOS, parseDecimal
 
 class RegistroC170Service:
     def __init__(self, session, empresa_id):
         self.session = session
         self.empresa_id = empresa_id
-        self.repository = RegistroC170Repository(session)
         self.periodo = None
         self.filial = None
         self.mapa_documentos = {}
