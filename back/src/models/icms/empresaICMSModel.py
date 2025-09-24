@@ -1,0 +1,9 @@
+from sqlalchemy import Column, Integer, String
+from config.db.base import Base
+
+class EmpresaICMS(Base):
+    __tablename__ = "empresas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cnpj = Column(String(20), nullable=False)
+    razao_social = Column(String(100), nullable=False)
