@@ -13,5 +13,5 @@ if __name__ == "__main__":
         r"C:\Users\joaov\OneDrive\Documentos\Estagio\documentacao\EFD 07.2025\MTZ - SPED FISCAL 07.2025.2025.txt",
     ]
 
-    pipeline = PipelineService(session, empresa_id, arquivos, num_workers=2, buffer_size=5000)
+    pipeline = PipelineService(session, empresa_id, arquivos)
     pipeline.executar()

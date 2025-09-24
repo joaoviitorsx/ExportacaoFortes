@@ -27,7 +27,6 @@ class RegistroC100Repository:
                 if_exists="append",
                 index=False,
                 method="multi",
-                chunksize=10000
             )
         except Exception as e:
             self.session.rollback()

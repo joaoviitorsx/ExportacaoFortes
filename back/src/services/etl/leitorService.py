@@ -9,7 +9,7 @@ from src.services.etl.registros.registroC170 import RegistroC170Service
 from src.services.etl.registros.registroC190 import RegistroC190Service
 
 class LeitorService:
-    def __init__(self, session, empresa_id, arquivos: list[str], fila: queue.Queue, buffer_size=5000):
+    def __init__(self, session, empresa_id, arquivos: list[str], fila: queue.Queue, buffer_size=10000):
         self.session = session
         self.empresa_id = empresa_id
         self.arquivos = arquivos
