@@ -21,7 +21,7 @@ class PipelineService:
     def executar(self):
         print(f"[INFO] Iniciando pipeline para {len(self.arquivos)} arquivo(s).")
 
-        # 1. Criar workers de persistência (consumidores)
+        #criar workers de persistência
         for _ in range(self.num_workers):
             workerSession = getSessionFS()
             worker = Persistencia(self.fila, workerSession, self.empresa_id)
@@ -29,7 +29,7 @@ class PipelineService:
             self.threads_workers.append(worker)
 
         try:
-            # 2. Criar threads de leitura (produtores)
+            #criar threads de leitura
             for arquivo in self.arquivos:
                 leitor = LeitorService(
                     self.session,
@@ -42,7 +42,7 @@ class PipelineService:
                 t.start()
                 self.threads_leitura.append(t)
 
-            # 3. Aguardar término da leitura
+            #aguardar término da leitura
             for t in self.threads_leitura:
                 t.join()
             print("[INFO] Pipeline de leituras encerrado.")
