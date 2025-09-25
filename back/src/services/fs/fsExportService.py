@@ -2,6 +2,7 @@ from src.services.fs.CAB.exportarCAB import ExportarCAB
 from src.services.fs.PAR.exportarPAR import ExportarPAR
 from src.services.fs.PRO.exportarPRO import ExportarPRO
 from src.services.fs.UND.exportarUND import ExportarUND
+from src.services.fs.PNM.exportarPNM import ExportarPNM
 from src.services.fs.INM.exportarINM import ExportarINM
 
 class FSExportService:
@@ -24,5 +25,10 @@ class FSExportService:
         und = ExportarUND(self.session).gerar(empresa_id)
         return und
     
+    def exportarPNM(self, empresa_id: int):
+        pnm = ExportarPNM(self.session, empresa_id).gerar()
+        return pnm
+    
     def exportarINM(self, empresa_id: int):
-        return ExportarINM(self.session).gerar(empresa_id)
+        inm = ExportarINM(self.session).gerar(empresa_id)
+        return inm
