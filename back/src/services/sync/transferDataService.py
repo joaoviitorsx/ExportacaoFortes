@@ -1,5 +1,6 @@
 from src.repositories.transfer.empresaRepository import EmpresaRepository
 from src.repositories.transfer.produtoRepository import ProdutoRepository
+from src.services.sync.validacaoTransferService import ValidacaoTransferService
 
 class TransferDataService:
     def __init__(self, sessionICMS, sessionExportacao):
@@ -7,26 +8,27 @@ class TransferDataService:
         self.repoEmpresaExport = EmpresaRepository(sessionExportacao)
         self.repoProdutoIcms = ProdutoRepository(sessionICMS)
         self.repoProdutoExport = ProdutoRepository(sessionExportacao)
+        self.validador = ValidacaoTransferService()
 
-    def sincronizarEmpresa(self, empresa_id_destino: int):
+    def sincronizarEmpresa(self, empresaIdDestino: int):
         # 1. Buscar empresa no banco exportacao
-        empresa_destino = self.repoEmpresaExport.getID(empresa_id_destino)
-        if not empresa_destino:
-            print("[ERRO] Empresa não encontrada no exportacaofortes.")
+        empresaDestino = self.repoEmpresaExport.getID(empresaIdDestino)
+        if not empresaDestino:
+            print("[ERRO] Empresa não encontrada no banco exportacaofortes.")
             return
 
-        cnpj = empresa_destino["cnpj"]
-        empresa_id_export = empresa_destino["id"]
+        cnpj = empresaDestino["cnpj"]
+        empresaIdExport = empresaDestino["id"]
 
-        print(f"[INFO] Empresa destino: {empresa_destino['razao_social']} ({cnpj})")
+        print(f"[INFO] Empresa destino: {empresaDestino['razao_social']} ({cnpj})")
 
         # 2. Mapear para empresa no ICMS
-        empresa_origem = self.repoEmpresaIcms.getCnpj(cnpj)
-        if not empresa_origem:
+        empresaOrigem = self.repoEmpresaIcms.getCnpj(cnpj)
+        if not empresaOrigem:
             print("[ERRO] Empresa não encontrada no apuradoricms.")
             return
 
-        empresa_id_icms = empresa_origem["id"]
+        empresa_id_icms = empresaOrigem["id"]
         print(f"[INFO] Empresa origem encontrada com ID: {empresa_id_icms}")
 
         # 3. Buscar produtos do ICMS
@@ -37,9 +39,13 @@ class TransferDataService:
 
         print(f"[INFO] {len(df)} produtos encontrados.")
 
+        dfValidado = self.validador.validar(df)
+        if dfValidado.empty:
+            print("[ERRO] Nenhum dado válido para transferir após validação.")
+            return
+        
         # 4. Ajustar para salvar no exportacao
-        df["empresa_id"] = empresa_id_export
-        # 5. Inserir no exportacao
+        df["empresa_id"] = empresaIdExport
         self.repoProdutoExport.inserirDados(df)
 
-        print(f"[SUCESSO] {len(df)} produtos transferidos para empresa {empresa_destino['razao_social']}.")
+        print(f"[SUCESSO] {len(df)} produtos transferidos para empresa {empresaDestino['razao_social']}.")
