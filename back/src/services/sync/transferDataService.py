@@ -8,7 +8,7 @@ class TransferDataService:
         self.repo_produto_icms = ProdutoRepository(sessionICMS)
         self.repo_produto_export = ProdutoRepository(sessionExportacao)
 
-    def sincronizar_empresa(self, empresa_id_destino: int):
+    def sincronizarEmpresa(self, empresa_id_destino: int):
         # 1. Buscar empresa no banco exportacao
         empresa_destino = self.repo_empresa_export.getId(empresa_id_destino)
         if not empresa_destino:

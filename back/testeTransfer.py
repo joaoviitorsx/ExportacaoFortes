@@ -8,4 +8,4 @@ sessionExportacao = getSessionFS()
 
 # Rodar serviço
 transfer = TransferDataService(sessionICMS, sessionExportacao)
-transfer.sincronizar_empresa(empresa_id_destino=5)
+transfer.sincronizarEmpresa(empresa_id_destino=5)
