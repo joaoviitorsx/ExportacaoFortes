@@ -13,10 +13,10 @@ class FornecedorRepository:
             SELECT r.cod_part, r.nome, r.cnpj
             FROM `registro_0150` r
             WHERE r.empresa_id = :empresa_id
-              AND r.cnpj IS NOT NULL AND r.cnpj != ''
-              AND r.cod_part NOT IN (
-                  SELECT cod_part FROM cadastro_fornecedores WHERE empresa_id = :empresa_id
-              )
+            AND r.cnpj IS NOT NULL AND r.cnpj != ''
+            AND r.cod_part NOT IN (
+                SELECT cod_part FROM fornecedores WHERE empresa_id = :empresa_id
+            )
         """)
         return pd.read_sql(query, self.db.bind, params={"empresa_id": empresa_id})
 
