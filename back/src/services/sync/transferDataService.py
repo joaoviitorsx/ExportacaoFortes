@@ -1,5 +1,5 @@
-from src.repositories.transfer.empresaRepository import EmpresaRepository
-from src.repositories.transfer.produtoRepository import ProdutoRepository
+from src.repositories.transferRepo.empresaRepository import EmpresaRepository
+from src.repositories.transferRepo.produtoRepository import ProdutoRepository
 from src.services.sync.validacaoTransferService import ValidacaoTransferService
 
 class TransferDataService:
