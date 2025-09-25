@@ -1,5 +1,5 @@
-from functools import wraps
 from time import time
+from functools import wraps
 
 def cache(ttl=3600):
     cache_dict = {}
