@@ -12,13 +12,17 @@ def main():
     und = service.exportarUND(empresa_id)
     inm = service.exportarINM(empresa_id)
     pnm = service.exportarPNM(empresa_id)
+    nfm = service.exportarNFM(empresa_id)
 
-    #print(cab)
-    #print(par)
-    #print(pro)
-    #print(und)
-    print("\n".join(pnm))
+    #print("\n".join(cab))
+    #print("\n".join(par))
+    #print("\n".join(pro))
+    #print("\n".join(und))
+    #print("\n".join(pnm))
     #print("\n".join(inm))
+    print("\n".join(nfm))
+    
+    
 
 if __name__ == "__main__":
     main()

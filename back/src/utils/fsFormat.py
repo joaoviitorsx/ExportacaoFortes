@@ -1,6 +1,7 @@
 import re
 import unicodedata
 from typing import Dict, Any
+from datetime import date
 
 UNIDADES = {
     "KG": "QUILOGRAMA",
@@ -52,3 +53,23 @@ def tributacaoICMS(cstb: str) -> str:
     if cstb == '51':
         return '5'  # Diferimento
     return '1'  # Tributado Integralmente (Default para 00, etc.)
+
+#Formata um objeto date para YYYYMMDD. Retorna vazio se a data for nula.
+def formatarData(value: Any) -> str:
+    if isinstance(value, date):
+        return value.strftime('%Y%m%d')
+    return ''
+
+#Mapeia o indicador de operação do SPED para o layout Fortes.
+def tipoOperacao(ind_oper: str) -> str:
+    return 'E' if ind_oper == '0' else 'S' if ind_oper == '1' else ''
+
+#Mapeia o código do modelo do SPED para o layout Fortes.
+def modeloDoc(cod_mod: str) -> str:
+    modelos = {'55': 'NFE', '01': 'NF'}
+    return modelos.get(cod_mod, '')
+
+#Mapeia o código de situação do SPED para o layout Fortes.
+def situacaoDoc(cod_sit: str) -> str:
+    situacoes = {'00': 'N', '02': 'C', '03': 'E', '04': 'D', '05': 'I'}
+    return situacoes.get(cod_sit, 'N') # Padrão 'N' de Normal
