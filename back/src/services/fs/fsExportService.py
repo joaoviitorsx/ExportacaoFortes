@@ -5,6 +5,7 @@ from src.services.fs.UND.exportarUND import ExportarUND
 from src.services.fs.PNM.exportarPNM import ExportarPNM
 from src.services.fs.INM.exportarINM import ExportarINM
 from src.services.fs.NFM.exportarNFM import ExportarNFM
+from src.services.fs.SNM.exportarSNM import ExportarSNM
 
 class FSExportService:
     def __init__(self, session):
@@ -36,4 +37,8 @@ class FSExportService:
     
     def exportarNFM(self, empresa_id: int):
         nfm = ExportarNFM(self.session, empresa_id).gerar()
-        return nfm  
+        return nfm
+    
+    def exportarSNM(self, empresa_id: int):
+        snm = ExportarSNM(self.session, empresa_id).gerar()
+        return snm
