@@ -5,6 +5,8 @@ from ..components.progressBar import ProgressBar
 
 class UploadCard(Card):
     def __init__(self, on_file_selected=None):
+        self.on_file_selected = on_file_selected
+
         subtitle = ft.Text(
             "Selecionar Arquivo SPED",
             size=15,
@@ -18,10 +20,18 @@ class UploadCard(Card):
             color=ft.Colors.GREY_600,
         )
 
-        file_picker = ft.FilePicker(
-            on_result=lambda e: on_file_selected(e.files[0].name) if e.files else None
+        # Texto que exibirá os nomes dos arquivos selecionados
+        self.selected_files_text = ft.Text(
+            "Nenhum arquivo selecionado",
+            size=12,
+            color=ft.Colors.GREY_700,
+            italic=True,
         )
 
+        # FilePicker
+        self.file_picker = ft.FilePicker(on_result=self._on_files_picked)
+
+        # Área de upload
         upload_area = ft.Container(
             content=ft.Column(
                 [
@@ -38,6 +48,7 @@ class UploadCard(Card):
                         color=ft.Colors.GREY_500,
                         italic=True,
                     ),
+                    self.selected_files_text,  # exibe os nomes dos arquivos
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=5,
@@ -49,21 +60,47 @@ class UploadCard(Card):
             alignment=ft.alignment.center,
         )
 
-        upload_area.on_click = lambda _: file_picker.pick_files(
-            allow_multiple=False,
+        upload_area.on_click = lambda _: self.file_picker.pick_files(
+            allow_multiple=True,  # agora permite múltiplos arquivos
             file_type=ft.FilePickerFileType.CUSTOM,
             allowed_extensions=["txt"],
         )
 
+        # ProgressBar
         self.progress = ProgressBar()
         self.progress.visible = False
 
+        # Conteúdo do card
         content = ft.Column(
-            [subtitle, description, upload_area, file_picker, self.progress],
+            [subtitle, description, upload_area, self.file_picker, self.progress],
             spacing=12,
         )
 
         super().__init__(title="Upload do Arquivo", content=content)
+
+    # --- Métodos auxiliares ---
+    def _on_files_picked(self, e: ft.FilePickerResultEvent):
+        if e.files:
+            filenames = [f.name for f in e.files]
+
+            if len(filenames) == 1:
+                display_text = filenames[0]
+            else:
+                primeiros = filenames[:3]
+                restantes = len(filenames) - 3
+                display_text = ", ".join(primeiros)
+                if restantes > 0:
+                    display_text += f" … mais {restantes} arquivo(s) selecionado(s)"
+
+            self.selected_files_text.value = display_text
+            self.update()
+
+            # callback externo
+            if self.on_file_selected:
+                self.on_file_selected(filenames)
+        else:
+            self.selected_files_text.value = "Nenhum arquivo selecionado"
+            self.update()
 
     def show_progress(self, visible=True):
         self.progress.visible = visible

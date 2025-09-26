@@ -8,7 +8,7 @@ class ProgressBar(ft.Column):
             expand=True,
         )
 
-        self.bar = ft.ProgressBar(width=400, value=0, bgcolor="#ddd")
+        self.bar = ft.ProgressBar(width=400, height=12, value=0, bgcolor="#ddd")
         self.status = ft.Text("Aguardando processamento...", size=14, color="grey")
 
         self.steps = ft.Column(
@@ -28,7 +28,7 @@ class ProgressBar(ft.Column):
         self.bar.value = percent / 100
         self.status.value = message
         self.steps.controls.append(
-            ft.Text(f"✔ {message}", size=12, color=ft.colors.GREY_800)
+            ft.Text(f"✔ {message}", size=12, color=ft.Colors.GREY_800)
         )
         self.update()
 
@@ -36,6 +36,6 @@ class ProgressBar(ft.Column):
         self.bar.value = 1
         self.status.value = "Concluído!"
         self.steps.controls.append(
-            ft.Text("✔ Processamento finalizado com sucesso!", size=12, color=ft.colors.GREEN_600)
+            ft.Text("✔ Processamento finalizado com sucesso!", size=12, color=ft.Colors.GREEN_600)
         )
         self.update()
