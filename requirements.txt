@@ -3,3 +3,4 @@ PyMySQL
 pandas
 python-dotenv
 aiohttp
+flet
