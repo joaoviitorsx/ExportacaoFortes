@@ -18,9 +18,9 @@ def main():
     #print("\n".join(par))
     #print("\n".join(pro))
     #print("\n".join(und))
-    #print("\n".join(pnm))
+    print("\n".join(pnm))
     #print("\n".join(inm))
-    print("\n".join(nfm))
+    #print("\n".join(nfm))
     
     
 

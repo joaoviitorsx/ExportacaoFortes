@@ -41,9 +41,15 @@ def formatarValor(value: Any, precision: int = 2) -> str:
         return str(value)
 
 #Define o código de Tributação ICMS (Campo 11 do PNM) com base no CSTB.
-def tributacaoICMS(cstb: str) -> str:
-    if not cstb:
-        return '1'
+def tributacaoICMS(cstb: str, aliquota_cadastro: str) -> str:
+    # 1. Prioridade: Verifica a informação do cadastro de produtos
+    aliquota_str = str(aliquota_cadastro).strip().upper()
+    if aliquota_str == 'ST':
+        return '3'  # Substituição Tributária
+    if aliquota_str == 'ISENTO' or aliquota_str == 'I':
+        return '4'  # Isenta
+
+    # 2. Se não for um código, usa a lógica padrão baseada no CST
     if cstb in ('10', '30', '60', '70', '90'):
         return '3'  # Substituição Tributária
     if cstb == '20':
@@ -52,7 +58,8 @@ def tributacaoICMS(cstb: str) -> str:
         return '4'  # Isenta
     if cstb == '51':
         return '5'  # Diferimento
-    return '1'  # Tributado Integralmente (Default para 00, etc.)
+    
+    return '1'  # Padrão: Tributado Integralmente
 
 #Formata um objeto date para YYYYMMDD. Retorna vazio se a data for nula.
 def formatarData(value: Any) -> str:

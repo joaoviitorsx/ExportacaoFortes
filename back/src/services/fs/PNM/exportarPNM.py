@@ -2,17 +2,7 @@ from typing import Iterable, Dict, Any, List, Sequence
 from sqlalchemy import text, bindparam
 from .builderPNM import builderPNM
 
-
 class ExportarPNM:
-    """
-    Exporta os registros PNM (Produtos da Nota Fiscal de Mercadorias).
-    Etapas:
-      1) Buscar itens (C170)
-      2) Buscar cabeçalhos (C100) apenas para os c100_id coletados
-      3) Buscar produtos (0200) apenas para os cod_item coletados
-      4) Buscar soma de itens por nota (para rateio)
-      5) Montar linhas via builderPNM
-    """
 
     def __init__(self, session, empresa_id: int, chunk_size: int = 1000):
         self.session = session
@@ -24,7 +14,7 @@ class ExportarPNM:
         for i in range(0, len(seq), size):
             yield seq[i : i + size]
 
-    #buscar os itens da c170 com todos os campos fiscais que precisa
+    #Busca os itens da C170 com todos os campos fiscais necessários.
     def itens(self) -> List[Dict[str, Any]]:
         q = text(
             """
@@ -48,18 +38,15 @@ class ExportarPNM:
         )
         rows = self.session.execute(q, {"empresa_id": self.empresa_id}).mappings().all()
         return list(rows)
-
-    #busca dados da c100 apenas para o ids informados
+    
+    #Busca dados da C100 apenas para os IDs informados.
     def cabecalhos(self, c100_ids: Sequence[int]) -> Dict[int, Dict[str, Any]]:
-        if not c100_ids:
+        if not c100_ids: 
             return {}
+        
         resultados: Dict[int, Dict[str, Any]] = {}
         base = text(
-            """
-            SELECT id AS c100_id, dt_doc, ind_emit, chv_nfe, vl_frt, vl_seg, vl_out_da
-            FROM registro_c100
-            WHERE id IN :ids
-            """
+            "SELECT id AS c100_id, dt_doc, ind_emit, chv_nfe, vl_frt, vl_seg, vl_out_da FROM registro_c100 WHERE id IN :ids"
         ).bindparams(bindparam("ids", expanding=True))
         for chunk in self.chunks(list(set(c100_ids)), self.chunk_size):
             rows = self.session.execute(base, {"ids": chunk}).mappings().all()
@@ -67,78 +54,79 @@ class ExportarPNM:
                 resultados[r["c100_id"]] = dict(r)
         return resultados
 
-    #busca dados do 0200 apenas para os codigos informados
     def produtos(self, cod_items: Sequence[str]) -> Dict[str, Dict[str, Any]]:
-        if not cod_items:
-            return {}
+        if not cod_items: return {}
+        
         resultados: Dict[str, Dict[str, Any]] = {}
-        base = text(
+        
+        query = text(
             """
-            SELECT cod_item, cod_ncm, cest AS cod_cest
-            FROM registro_0200
-            WHERE empresa_id = :empresa_id AND cod_item IN :cods
+            SELECT 
+                p.codigo AS cod_item,
+                r.cod_ncm,
+                r.cest AS cod_cest,
+                p.aliquota AS aliquota_cadastro
+            FROM produtos p
+            LEFT JOIN registro_0200 r ON p.codigo = r.cod_item AND p.empresa_id = r.empresa_id
+            WHERE p.empresa_id = :empresa_id AND p.codigo IN :cods
             """
         ).bindparams(bindparam("cods", expanding=True))
-        for chunk in self.chunks(list(set(filter(None, cod_items))), self.chunk_size):
-            rows = self.session.execute(base, {"empresa_id": self.empresa_id, "cods": chunk}).mappings().all()
+
+        cods_unicos = list(set(filter(None, cod_items)))
+        for chunk in self.chunks(cods_unicos, self.chunk_size):
+            params = {"empresa_id": self.empresa_id, "cods": chunk}
+            rows = self.session.execute(query, params).mappings().all()
             for r in rows:
                 resultados[r["cod_item"]] = dict(r)
+        
         return resultados
-
-    #buscar o calculo do vl_item por c100_id para o rateio
-    def calculo(self, c100_ids: Sequence[int]) -> Dict[int, float]:
-        if not c100_ids:
+    
+    #Calcula a soma de vl_item por c100_id para o rateio.
+    def calculo_somas(self, c100_ids: Sequence[int]) -> Dict[int, float]:
+        if not c100_ids: 
             return {}
         resultado: Dict[int, float] = {}
         base = text(
-            """
-            SELECT c100_id, SUM(vl_item) AS soma_itens
-            FROM registro_c170
-            WHERE c100_id IN :ids
-            GROUP BY c100_id
-            """
+            "SELECT c100_id, SUM(vl_item) AS soma_itens FROM registro_c170 WHERE c100_id IN :ids GROUP BY c100_id"
         ).bindparams(bindparam("ids", expanding=True))
         for chunk in self.chunks(list(set(c100_ids)), self.chunk_size):
             rows = self.session.execute(base, {"ids": chunk}).mappings().all()
             for r in rows:
                 resultado[r["c100_id"]] = float(r["soma_itens"] or 0.0)
         return resultado
-
-    #orquestra tudo e gera as linhas PNM
+    
+    #Orquestra a busca e a geração das linhas PNM.
     def gerar(self) -> List[str]:
         itens = self.itens()
-        if not itens:
-            return []
+        if not itens: return []
 
-        c100_ids = [r["c100_id"] for r in itens if r.get("c100_id") is not None]
+        c100_ids = [r["c100_id"] for r in itens if r.get("c100_id")]
         cod_items = [r["cod_item"] for r in itens if r.get("cod_item")]
 
         cabecalhos = self.cabecalhos(c100_ids)
-        produtos = self.produtos(cod_items)
-        somas = self.calculo(c100_ids)
+        dados_produtos = self.produtos(cod_items)
+        somas = self.calculo_somas(c100_ids)
 
         linhas_pnm: List[str] = []
-
         for item_c170 in itens:
             c100_id = item_c170["c100_id"]
             head = cabecalhos.get(c100_id, {})
-            prod = produtos.get(item_c170.get("cod_item"), {})
+            prod = dados_produtos.get(item_c170.get("cod_item"), {})
 
-            soma_itens_nota = float(somas.get(c100_id, 0.0) or 0.0)
+            soma_itens_nota = somas.get(c100_id, 0.0)
             vl_item_atual = float(item_c170.get("vl_item") or 0.0)
-
             proporcao = (vl_item_atual / soma_itens_nota) if soma_itens_nota > 0 else 0.0
 
-            dadosCompletos = {
+            dados_completos = {
                 **item_c170,
                 **head,
-                **prod,
+                **prod, # Agora inclui aliquota_cadastro, ncm, cod_cest
                 "frete_rateado": round(float(head.get("vl_frt") or 0.0) * proporcao, 2),
                 "seguro_rateado": round(float(head.get("vl_seg") or 0.0) * proporcao, 2),
                 "outras_desp_rateado": round(float(head.get("vl_out_da") or 0.0) * proporcao, 2),
             }
 
-            linha = builderPNM(dadosCompletos)
+            linha = builderPNM(dados_completos)
             linhas_pnm.append(linha)
 
         return linhas_pnm
