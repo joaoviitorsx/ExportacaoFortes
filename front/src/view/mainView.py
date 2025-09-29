@@ -32,16 +32,16 @@ def MainView(page: ft.Page):
         btn_processar.disabled = True
         page.update()
 
-        uploader_card.show_progress(True)
+        uploader_card.showProgress(True)
 
         etapas = ["Lendo registros C100…", "Gerando PNM…", "Finalizando…"]
         for step, msg in enumerate(etapas, start=1):
             time.sleep(1.2)
-            uploader_card.update_progress(step * 30, msg)
+            uploader_card.updateProgress(step * 30, msg)
             notificacao(page, "Processando", msg, tipo="info", duracao=2)
             page.update()
 
-        uploader_card.update_progress(100, "Concluído!")
+        uploader_card.updateProgress(100, "Concluído!")
         notificacao(page, "Sucesso!", "Arquivo .fs gerado com sucesso.", tipo="sucesso")
         btn_download.visible = True
         page.update()
@@ -58,9 +58,11 @@ def MainView(page: ft.Page):
                     spacing=20,
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
+                Header.footer(),
             ],
-            spacing=40,
+            spacing=17,
             expand=True,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll = ft.ScrollMode.AUTO
         )
     )
