@@ -1,5 +1,5 @@
 import pandas as pd
-from src.utils.aliquota import categoriaAliquota, validarAliquota
+from ...utils.aliquota import categoriaAliquota, validarAliquota
 
 class ValidacaoTransferService:
     def __init__(self):

@@ -1,6 +1,6 @@
-from src.repositories.transferRepo.empresaRepository import EmpresaRepository
-from src.repositories.transferRepo.produtoRepository import ProdutoRepository
-from src.services.sync.validacaoTransferService import ValidacaoTransferService
+from ...repositories.transferRepo.empresaRepository import EmpresaRepository
+from ...repositories.transferRepo.produtoRepository import ProdutoRepository
+from ...services.sync.validacaoTransferService import ValidacaoTransferService
 
 class TransferDataService:
     def __init__(self, sessionICMS, sessionExportacao):
