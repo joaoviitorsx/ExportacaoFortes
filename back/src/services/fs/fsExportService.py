@@ -8,8 +8,9 @@ from ...services.fs.NFM.exportarNFM import ExportarNFM
 from ...services.fs.SNM.exportarSNM import ExportarSNM
 
 class FSExportService:
-    def __init__(self, session):
+    def __init__(self, session, empresa_id):
         self.session = session
+        self.empresa_id = empresa_id    
 
     def exportarCAB(self, empresa_id: int):
         cab = ExportarCAB(self.session).gerar(empresa_id)

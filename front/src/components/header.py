@@ -1,5 +1,5 @@
 import flet as ft
-from front.src.utils.path import resourcePath
+from ...src.utils.path import resourcePath
 
 class Header(ft.Column):
     def __init__(self):

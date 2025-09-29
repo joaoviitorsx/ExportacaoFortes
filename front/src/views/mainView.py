@@ -12,14 +12,13 @@ def MainView(page: ft.Page):
     page.bgcolor = "#F5F6FA"
     page.padding = 30
 
-    btn_processar = ActionButton(
+    btnProcessar = ActionButton(
         "Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True, color="primary"
     )
-    btn_download = ActionButton(
+    btnDownload = ActionButton(
         "Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False, color="success"
     )
 
-    # arquivos selecionados
     uploader_card = UploadCard(on_file_selected=lambda f: file_selected(f))
 
     selected_files = []
@@ -27,9 +26,9 @@ def MainView(page: ft.Page):
     def file_selected(filenames):
         nonlocal selected_files
         selected_files = filenames
-        btn_processar.disabled = False
-        btn_processar.text = "Processar Arquivo"
-        btn_download.visible = False
+        btnProcessar.disabled = False
+        btnProcessar.text = "Processar Arquivo"
+        btnDownload.visible = False
         page.update()
         notificacao(page, "Arquivo selecionado", ", ".join(filenames), tipo="info")
 
@@ -38,7 +37,7 @@ def MainView(page: ft.Page):
         MainView(page)
 
     def processar(e):
-        if btn_processar.text == "Processar Novamente":
+        if btnProcessar.text == "Processar Novamente":
             resetarView()
             return
 
@@ -46,7 +45,7 @@ def MainView(page: ft.Page):
             notificacao(page, "Erro", "Nenhum arquivo selecionado.", tipo="erro")
             return
 
-        btn_processar.disabled = True
+        btnProcessar.disabled = True
         uploader_card.disableRefresh()
         uploader_card.showProgress(True)
         page.update()
@@ -56,7 +55,7 @@ def MainView(page: ft.Page):
         page.overlay.append(save_dialog)
         page.update()
         save_dialog.save_file(
-            file_name="Exportacao_Fortes.fs", allowed_extensions=["fs"]
+            file_name="Exportacao Fortes.fs", allowed_extensions=["fs"]
         )
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
@@ -70,17 +69,17 @@ def MainView(page: ft.Page):
             if resposta["status"] == "ok":
                 uploader_card.updateProgress(100, "Concluído!")
                 notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
-                btn_download.visible = True
-                btn_processar.disabled = False
-                btn_processar.text = "Processar Novamente"
+                btnDownload.visible = True
+                btnProcessar.disabled = False
+                btnProcessar.text = "Processar Novamente"
             else:
                 uploader_card.updateProgress(0, "Erro no processamento")
                 notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
-                btn_processar.disabled = False
+                btnProcessar.disabled = False
 
             page.update()
 
-    btn_processar.on_click = processar
+    btnProcessar.on_click = processar
 
     page.add(
         ft.Column(
@@ -88,7 +87,7 @@ def MainView(page: ft.Page):
                 Header(),
                 uploader_card,
                 ft.Row(
-                    [btn_processar, btn_download],
+                    [btnProcessar, btnDownload],
                     spacing=20,
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
