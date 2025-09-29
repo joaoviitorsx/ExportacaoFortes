@@ -1,6 +1,6 @@
 import asyncio
-from src.utils.cnpj import processarCnpjs
-from src.repositories.fornecedoresRepo.fornecedorRepository import FornecedorRepository
+from ...utils.cnpj import processarCnpjs
+from ...repositories.fornecedoresRepo.fornecedorRepository import FornecedorRepository
 
 LOTE = 50
 
