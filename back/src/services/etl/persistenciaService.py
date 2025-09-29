@@ -2,12 +2,12 @@ import queue
 import threading
 import pandas as pd
 
-from src.repositories.registrosRepo.registro0000Repository import Registro0000Repository
-from src.repositories.registrosRepo.registro0150Repository import Registro0150Repository
-from src.repositories.registrosRepo.registro0200Repository import Registro0200Repository
-from src.repositories.registrosRepo.registroC100Repository import RegistroC100Repository
-from src.repositories.registrosRepo.registroC170Repository import RegistroC170Repository
-from src.repositories.registrosRepo.registroC190Repository import RegistroC190Repository
+from ...repositories.registrosRepo.registro0000Repository import Registro0000Repository
+from ...repositories.registrosRepo.registro0150Repository import Registro0150Repository
+from ...repositories.registrosRepo.registro0200Repository import Registro0200Repository
+from ...repositories.registrosRepo.registroC100Repository import RegistroC100Repository
+from ...repositories.registrosRepo.registroC170Repository import RegistroC170Repository
+from ...repositories.registrosRepo.registroC190Repository import RegistroC190Repository
 
 class Persistencia(threading.Thread):
     def __init__(self, fila: queue.PriorityQueue, session, empresa_id):

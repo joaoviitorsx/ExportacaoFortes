@@ -1,6 +1,6 @@
 import pandas as pd
-from src.services.etl.validadorService import ValidadorService  
-from src.utils.sanitizacao import truncar, corrigirUnidade, corrigirIndMov, corrigirCstIcms, validarEstruturaC170, TAMANHOS_MAXIMOS, parseDecimal
+from .....src.services.etl.validadorService import ValidadorService  
+from .....src.utils.sanitizacao import truncar, corrigirUnidade, corrigirIndMov, corrigirCstIcms, validarEstruturaC170, TAMANHOS_MAXIMOS, parseDecimal
 
 class RegistroC170Service:
     def __init__(self, session, empresa_id):

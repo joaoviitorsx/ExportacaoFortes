@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
-from src.utils.sanitizacao import parseDecimal, parseDate
-from src.services.etl.validadorService import ValidadorService
+from .....src.utils.sanitizacao import parseDecimal, parseDate
+from .....src.services.etl.validadorService import ValidadorService
 
 class RegistroC100Service:
     def __init__(self, session, empresa_id):

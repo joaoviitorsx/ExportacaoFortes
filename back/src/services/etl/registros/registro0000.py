@@ -1,7 +1,7 @@
 import pandas as pd
 
-from src.services.etl.validadorService import ValidadorService
-from src.utils.sanitizacao import calcularPeriodo, formatarData
+from .....src.services.etl.validadorService import ValidadorService
+from .....src.utils.sanitizacao import calcularPeriodo, formatarData
 
 class Registro0000Service:
     def __init__(self, session, empresa_id):

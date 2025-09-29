@@ -1,10 +1,10 @@
 import threading
 import queue
 
-from src.services.etl.leitorService import LeitorService
-from src.services.etl.persistenciaService import Persistencia
+from ....src.services.etl.leitorService import LeitorService
+from ....src.services.etl.persistenciaService import Persistencia
 
-from src.config.db.conexaoFS import getSessionFS
+from ....src.config.db.conexaoFS import getSessionFS
 
 class PipelineService:
     def __init__(self, session, empresa_id, arquivos: list[str], num_workers=4, buffer_size=10000):

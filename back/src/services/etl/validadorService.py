@@ -1,6 +1,6 @@
 from typing import Tuple, List, Any
 from datetime import date
-from src.utils.sanitizacao import corrigirCfop, corrigirCstIcms
+from ....src.utils.sanitizacao import corrigirCfop, corrigirCstIcms
 
 class ValidadorService:
     @staticmethod

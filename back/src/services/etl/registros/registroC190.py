@@ -1,6 +1,6 @@
 import pandas as pd
-from src.utils.sanitizacao import parseDecimal
-from src.services.etl.validadorService import ValidadorService
+from .....src.utils.sanitizacao import parseDecimal
+from .....src.services.etl.validadorService import ValidadorService
 
 class RegistroC190Service:
     def __init__(self, session, empresa_id):

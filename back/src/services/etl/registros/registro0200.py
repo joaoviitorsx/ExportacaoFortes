@@ -1,6 +1,6 @@
 import pandas as pd
-from src.utils.sanitizacao import sanitizarCampo
-from src.services.etl.validadorService import ValidadorService
+from .....src.utils.sanitizacao import sanitizarCampo
+from .....src.services.etl.validadorService import ValidadorService
 
 class Registro0200Service:
     def __init__(self, session, empresa_id):
