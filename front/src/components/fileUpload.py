@@ -34,14 +34,15 @@ class UploadArea(ft.Container):
 
 class SelectedFilesCard(Card):
     def __init__(self, filenames, on_back):
-        if len(filenames) == 1:
-            display_text = filenames[0]
-        else:
-            primeiros = filenames[:3]
-            restantes = len(filenames) - 3
-            display_text = "\n".join(primeiros)
-            if restantes > 0:
-                display_text += f"\n … mais {restantes} arquivo(s) selecionado(s)"
+        primeiros = filenames[:3]
+        restantes = len(filenames) - 3
+
+        self.refreshButton = ft.IconButton(
+            icon=ft.Icons.REFRESH,
+            tooltip="Voltar",
+            on_click=on_back,
+            icon_color=ft.Colors.BLUE_600,
+        )
 
         content = ft.Column(
             [
@@ -49,11 +50,10 @@ class SelectedFilesCard(Card):
                     [
                         ft.Icon(name=ft.Icons.FILE_PRESENT, size=30, color=ft.Colors.GREEN_600),
                         ft.Text("Arquivos Selecionados", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
-                        ft.IconButton(
-                            icon=ft.Icons.REFRESH,
-                            tooltip="Voltar",
-                            on_click=on_back,
-                            icon_color=ft.Colors.BLUE_600,
+                        ft.Container(
+                            content=self.refreshButton,
+                            width=40,
+                            alignment=ft.alignment.center,
                         ),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -81,12 +81,13 @@ class SelectedFilesCard(Card):
             ],
             spacing=16
         )
-        super().__init__(title=None, content=content)   
+        super().__init__(title=None, content=content)
 
 class UploadCard(Card):
     def __init__(self, on_file_selected=None):
         self.on_file_selected = on_file_selected
         self.selected_files = []
+        self.files_card = None
 
         self.file_picker = ft.FilePicker(on_result=self.filesPicked)
         self.upload_area = UploadArea(self._pick_files)
@@ -124,8 +125,15 @@ class UploadCard(Card):
             self.showUpload()
 
     def showFiles(self):
-        self.content_column.controls[2] = SelectedFilesCard(self.selected_files, self.showUpload)
+        self.files_card = SelectedFilesCard(self.selected_files, self.showUpload)
+        self.content_column.controls[2] = self.files_card
         self.update()
+
+    def disableRefresh(self):
+        if self.files_card and self.files_card.refreshButton:
+            self.files_card.refreshButton.disabled = True
+            self.files_card.refreshButton.visible = False
+            self.files_card.refreshButton.update()
 
     def showUpload(self, _=None):
         self.selected_files = []
