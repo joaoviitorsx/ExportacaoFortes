@@ -1,6 +1,6 @@
-from src.config.db.conexaoFS import getSessionFS
-from src.services.fs.TRA.builderTRA import builderTRA
-from src.services.fs.fsExportService import FSExportService
+from ....src.config.db.conexaoFS import getSessionFS
+from ....src.services.fs.TRA.builderTRA import builderTRA
+from ....src.services.fs.fsExportService import FSExportService
 
 class GerarArquivo:
     def __init__(self, empresa_id: int, pathOutput: str):
