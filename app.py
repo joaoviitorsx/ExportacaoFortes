@@ -2,10 +2,9 @@ import flet as ft
 from front.src.view.mainView import MainView
 from front.src.utils.path import resourcePath
 
-
 def main(page: ft.Page):
     page.title = "SPED → Fortes Fiscal"
-    page.window.height = 820
+    page.window.height = 832
     page.window.width = 632
     page.resize=False
     page.theme_mode = ft.ThemeMode.LIGHT
