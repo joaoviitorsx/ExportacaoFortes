@@ -1,8 +1,8 @@
 import aiohttp
 import asyncio
 
-from src.utils.cache import cache
-from src.utils.validadores import removedorCaracteres
+from ..utils.cache import cache
+from ..utils.validadores import removedorCaracteres
 
 # lista de CNAEs isentas conforme Decreto 29.560/08
 CNAES_VALIDOS = {
