@@ -23,27 +23,40 @@ def MainView(page: ft.Page):
 
     def file_selected(filename):
         btn_processar.disabled = False
+        btn_processar.text = "Processar Arquivo"
+        btn_download.visible = False
         page.update()
         notificacao(page, "Arquivo selecionado", filename, tipo="info")
 
     uploader_card = UploadCard(on_file_selected=file_selected)
 
+    def resetarView():
+        page.clean()
+        MainView(page)
+
     def processar(e):
+        if btn_processar.text == "Processar Novamente":
+            resetarView()
+            return
+
         btn_processar.disabled = True
         page.update()
 
+        uploader_card.disableRefresh() 
         uploader_card.showProgress(True)
 
         etapas = ["Lendo registros C100…", "Gerando PNM…", "Finalizando…"]
         for step, msg in enumerate(etapas, start=1):
             time.sleep(1.2)
             uploader_card.updateProgress(step * 30, msg)
-            notificacao(page, "Processando", msg, tipo="info", duracao=2)
             page.update()
 
         uploader_card.updateProgress(100, "Concluído!")
         notificacao(page, "Sucesso!", "Arquivo .fs gerado com sucesso.", tipo="sucesso")
         btn_download.visible = True
+
+        btn_processar.disabled = False
+        btn_processar.text = "Processar Novamente"
         page.update()
 
     btn_processar.on_click = processar
@@ -63,6 +76,6 @@ def MainView(page: ft.Page):
             spacing=17,
             expand=True,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            scroll = ft.ScrollMode.AUTO
+            scroll=ft.ScrollMode.AUTO,
         )
     )
