@@ -1,4 +1,4 @@
-from src.utils.fsFormat import validacaoText, UNIDADES
+from ....utils.fsFormat import validacaoText, UNIDADES
 
 def builderUND(unidade_sigla: str) -> str:
     descricao = UNIDADES.get(unidade_sigla.upper(), unidade_sigla.upper())

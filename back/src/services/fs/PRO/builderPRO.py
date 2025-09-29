@@ -1,4 +1,4 @@
-from src.utils.fsFormat import digitos, validacaoText
+from .....src.utils.fsFormat import digitos, validacaoText
 
 def builderPRO(produto_data: dict) -> str:
     campos = [

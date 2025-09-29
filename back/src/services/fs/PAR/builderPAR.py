@@ -1,4 +1,4 @@
-from src.utils.fsFormat import digitos, validacaoText
+from ....utils.fsFormat import digitos, validacaoText
 
 def builderPAR(dados: dict) -> str:
     tipo = "PAR"

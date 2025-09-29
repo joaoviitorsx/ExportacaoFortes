@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from src.utils.fsFormat import formatarValor
+from ....utils.fsFormat import formatarValor
 
 def builderSNM(dados: Dict[str, Any]) -> str:
     campos = [''] * 14

@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from src.services.fs.PRO.builderPRO import builderPRO
+from .....src.services.fs.PRO.builderPRO import builderPRO
 
 class ExportarPRO:
     def __init__(self, session):

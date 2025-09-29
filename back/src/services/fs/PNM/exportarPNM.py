@@ -3,7 +3,6 @@ from sqlalchemy import text, bindparam
 from .builderPNM import builderPNM
 
 class ExportarPNM:
-
     def __init__(self, session, empresa_id: int, chunk_size: int = 1000):
         self.session = session
         self.empresa_id = empresa_id

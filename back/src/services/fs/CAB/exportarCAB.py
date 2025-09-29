@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from src.services.fs.CAB.builderCAB import builderCAB
+from ....services.fs.CAB.builderCAB import builderCAB
 
 class ExportarCAB:
     def __init__(self, session):

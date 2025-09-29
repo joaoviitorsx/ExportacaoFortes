@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from src.services.fs.INM.builderINM import builderINM
+from ....services.fs.INM.builderINM import builderINM
 
 class ExportarINM:
     def __init__(self, session):

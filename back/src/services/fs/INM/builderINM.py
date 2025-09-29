@@ -1,9 +1,4 @@
 def builderINM(c190_data: dict, uf: str) -> str:
-    """
-    Monta a linha do registro INM (Fortes Fiscal) a partir dos dados do C190,
-    alinhado com o leiaute oficial.
-    """
-    # --- Normalização dos dados numéricos ---
     def num(valor) -> float:
         try:
             return float(valor or 0)

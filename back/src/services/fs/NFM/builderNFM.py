@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from src.utils.fsFormat import formatarValor, formatarData, tipoOperacao, modeloDoc, situacaoDoc
+from ....utils.fsFormat import formatarValor, formatarData, tipoOperacao, modeloDoc, situacaoDoc
 
 def builderNFM(dados: Dict[str, Any]) -> str:
     campos = [''] * 79

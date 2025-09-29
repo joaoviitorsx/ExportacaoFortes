@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from src.services.fs.PAR.builderPAR import builderPAR
+from ....services.fs.PAR.builderPAR import builderPAR
 
 class ExportarPAR:
     def __init__(self, session):
