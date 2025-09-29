@@ -1,11 +1,9 @@
-import time
 import flet as ft
-
 from ..components.header import Header
 from ..components.fileUpload import UploadCard
 from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
-
+from ..routes.fsRoute import FsRoute
 
 def MainView(page: ft.Page):
     page.title = "Exportação SPED → Fortes Fiscal"
@@ -21,14 +19,19 @@ def MainView(page: ft.Page):
         "Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False, color="success"
     )
 
-    def file_selected(filename):
+    # arquivos selecionados
+    uploader_card = UploadCard(on_file_selected=lambda f: file_selected(f))
+
+    selected_files = []
+
+    def file_selected(filenames):
+        nonlocal selected_files
+        selected_files = filenames
         btn_processar.disabled = False
         btn_processar.text = "Processar Arquivo"
         btn_download.visible = False
         page.update()
-        notificacao(page, "Arquivo selecionado", filename, tipo="info")
-
-    uploader_card = UploadCard(on_file_selected=file_selected)
+        notificacao(page, "Arquivo selecionado", ", ".join(filenames), tipo="info")
 
     def resetarView():
         page.clean()
@@ -39,25 +42,43 @@ def MainView(page: ft.Page):
             resetarView()
             return
 
+        if not selected_files:
+            notificacao(page, "Erro", "Nenhum arquivo selecionado.", tipo="erro")
+            return
+
         btn_processar.disabled = True
-        page.update()
-
-        uploader_card.disableRefresh() 
+        uploader_card.disableRefresh()
         uploader_card.showProgress(True)
-
-        etapas = ["Lendo registros C100…", "Gerando PNM…", "Finalizando…"]
-        for step, msg in enumerate(etapas, start=1):
-            time.sleep(1.2)
-            uploader_card.updateProgress(step * 30, msg)
-            page.update()
-
-        uploader_card.updateProgress(100, "Concluído!")
-        notificacao(page, "Sucesso!", "Arquivo .fs gerado com sucesso.", tipo="sucesso")
-        btn_download.visible = True
-
-        btn_processar.disabled = False
-        btn_processar.text = "Processar Novamente"
         page.update()
+
+        # aqui o usuário escolhe onde salvar
+        save_dialog = ft.FilePicker(on_result=salvarArquivo)
+        page.overlay.append(save_dialog)
+        page.update()
+        save_dialog.save_file(
+            file_name="Exportacao_Fortes.fs", allowed_extensions=["fs"]
+        )
+
+    def salvarArquivo(result: ft.FilePickerResultEvent):
+        if result.path:
+            resposta = FsRoute.processarFs(
+                empresa_id=1,
+                arquivos=selected_files,
+                output_path=result.path,
+            )
+
+            if resposta["status"] == "ok":
+                uploader_card.updateProgress(100, "Concluído!")
+                notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
+                btn_download.visible = True
+                btn_processar.disabled = False
+                btn_processar.text = "Processar Novamente"
+            else:
+                uploader_card.updateProgress(0, "Erro no processamento")
+                notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+                btn_processar.disabled = False
+
+            page.update()
 
     btn_processar.on_click = processar
 
