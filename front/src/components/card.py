@@ -1,7 +1,7 @@
 import flet as ft
 
 class Card(ft.Container):
-    def __init__(self, title: str, content: ft.Control):
+    def __init__(self, title: str, content: ft.Control, icon: str = None):
         super().__init__(
             bgcolor=ft.Colors.WHITE,
             border_radius=12,
@@ -16,24 +16,36 @@ class Card(ft.Container):
             expand=False,
         )
 
-        title_text = ft.Text(
-            title,
-            size=16,
-            weight=ft.FontWeight.BOLD,
-            color=ft.Colors.BLACK87,
-        )
-
         controls = []
         if title:
-            controls.append(
-                ft.Text(
-                    title,
-                    size=16,
-                    weight=ft.FontWeight.BOLD,
-                    color=ft.Colors.BLACK87,
+            if icon:
+                controls.append(
+                    ft.Row(
+                        [
+                            ft.Icon(icon, size=20, color=ft.Colors.BLUE_600),
+                            ft.Text(
+                                title,
+                                size=16,
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.BLACK87,
+                            ),
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.START,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    )
                 )
-            )
+            else:
+                controls.append(
+                    ft.Text(
+                        title,
+                        size=16,
+                        weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.BLACK87,
+                    )
+                )
             controls.append(ft.Divider(height=15, color=ft.Colors.TRANSPARENT))
+
         controls.append(content)
 
         self.content = ft.Column(

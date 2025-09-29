@@ -105,7 +105,7 @@ class UploadCard(Card):
             spacing=12,
         )
 
-        super().__init__(title="Upload do Arquivo", content=self.content_column)
+        super().__init__(title="Upload do Arquivo", content=self.content_column, icon=ft.Icons.INSERT_DRIVE_FILE_ROUNDED)
 
     def _pick_files(self, _):
         self.file_picker.pick_files(
