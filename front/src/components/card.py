@@ -16,7 +16,6 @@ class Card(ft.Container):
             expand=False,
         )
 
-        # Título simples
         title_text = ft.Text(
             title,
             size=16,
@@ -24,13 +23,21 @@ class Card(ft.Container):
             color=ft.Colors.BLACK87,
         )
 
-        # Montagem final
+        controls = []
+        if title:
+            controls.append(
+                ft.Text(
+                    title,
+                    size=16,
+                    weight=ft.FontWeight.BOLD,
+                    color=ft.Colors.BLACK87,
+                )
+            )
+            controls.append(ft.Divider(height=15, color=ft.Colors.TRANSPARENT))
+        controls.append(content)
+
         self.content = ft.Column(
-            controls=[
-                title_text,
-                ft.Divider(height=15, color=ft.Colors.TRANSPARENT), 
-                content,
-            ],
+            controls=controls,
             spacing=12,
             alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.START,
