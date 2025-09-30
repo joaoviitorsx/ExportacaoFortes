@@ -6,7 +6,7 @@ class Card(ft.Container):
             bgcolor=ft.Colors.WHITE,
             border_radius=12,
             padding=20,
-            margin=ft.margin.only(top=12, bottom=2),
+            margin=ft.margin.only(top=12, bottom=2, right=8, left=8),
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=8,
