@@ -31,7 +31,13 @@ class LeitorService:
             self.processarArquivo(arquivo)
 
     def processarArquivo(self, arquivo):
-        print(f"[INFO] Iniciando leitura do arquivo: {os.path.basename(arquivo)}")
+        caminho = os.path.abspath(arquivo)
+
+        if not os.path.exists(caminho):
+            print(f"[ERRO] Arquivo não encontrado: {caminho}")
+            return
+
+        print(f"[INFO] Iniciando leitura do arquivo: {os.path.basename(caminho)}")
         c100Atual = None
 
         encodings = ["latin-1", "utf-8", "utf-16", "cp1252"]

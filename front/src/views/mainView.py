@@ -37,7 +37,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
 
     def resetarView():    
         page.go(f"/main?empresa={id}&nome={nome_empresa.replace(' ', '%20')}")
-        
+
     def processar(e):
         nonlocal processado_ok
         if btnProcessar.text == "Processar Novamente":
@@ -85,7 +85,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         page.overlay.append(save_dialog)
         page.update()
         save_dialog.save_file(
-            file_name="Exportacao_Fortes.fs", allowed_extensions=["fs"]
+            file_name="Exportacao Fortes.fs", allowed_extensions=["fs"]
         )
 
     def salvarArquivo(result: ft.FilePickerResultEvent):

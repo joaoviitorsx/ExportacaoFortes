@@ -1,3 +1,4 @@
+import os
 from ..config.db.conexaoFS import getSessionFS
 from ..config.db.conexaoICMS import getSessionICMS
 from ..services.exportar.gerarArquivo import GerarArquivo
@@ -29,7 +30,8 @@ class FsController:
 
         etapas.append({"percent": 72, "mensagem": "Executando ETL..."})
         session = getSessionFS()
-        pipeline = PipelineService(session, self.empresa_id, self.arquivos)
+        caminhos = [os.path.abspath(f) for f in self.arquivos]
+        pipeline = PipelineService(session, self.empresa_id, caminhos)
         pipeline.executar()
 
         etapas.append({"percent": 100, "mensagem": "Processamento concluído."})
