@@ -25,16 +25,20 @@ def main(page: ft.Page):
         page.views.clear()
 
         if page.route == "/":
-            EmpresaView(page)
+            page.views.append(EmpresaView(page))
 
         elif page.route == "/cadastro":
-            CadastroView(page)
+            page.views.append(CadastroView(page))
 
         elif page.route.startswith("/main"):
-            empresa_id = 1
+            empresa_id = None
             if "?empresa=" in page.route:
                 empresa_id = int(page.route.split("=")[-1])
-            MainView(page, empresa_id)
+
+            if empresa_id is not None:
+                page.views.append(MainView(page, empresa_id))
+            else:
+                page.go("/")
 
         page.update()
 
