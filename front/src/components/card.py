@@ -1,12 +1,12 @@
 import flet as ft
 
 class Card(ft.Container):
-    def __init__(self, title: str, content: ft.Control, icon: str = None):
+    def __init__(self, title: str, content: ft.Control, icon: str = None, width: int = None, height: int = None):
         super().__init__(
             bgcolor=ft.Colors.WHITE,
             border_radius=12,
             padding=20,
-            margin=ft.margin.only(top=10, bottom=10),
+            margin=ft.margin.only(top=12, bottom=2),
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=8,
@@ -14,6 +14,8 @@ class Card(ft.Container):
                 offset=ft.Offset(0, 2),
             ),
             expand=False,
+            width=width,
+            height=height,
         )
 
         controls = []
