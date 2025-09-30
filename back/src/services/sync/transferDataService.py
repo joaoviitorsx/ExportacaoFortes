@@ -46,6 +46,6 @@ class TransferDataService:
         
         # 4. Ajustar para salvar no exportacao
         df["empresa_id"] = empresaIdExport
-        self.repoProdutoExport.inserirDados(df)
+        self.repoProdutoExport.inserirDados(dfValidado, empresaIdExport)
 
         print(f"[SUCESSO] {len(df)} produtos transferidos para empresa {empresaDestino['razao_social']}.")
