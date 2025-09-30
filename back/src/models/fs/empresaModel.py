@@ -1,6 +1,6 @@
 from config.db.base import Base
 
-from sqlalchemy import Column, Integer, String, CHAR
+from sqlalchemy import Column, Integer, String, CHAR, Boolean
 
 class EmpresaModel(Base):
     __tablename__ = "empresas"
@@ -9,3 +9,4 @@ class EmpresaModel(Base):
     cnpj = Column(CHAR(14), nullable=False, unique=True, index=True)
     razao_social = Column(String(100), nullable=False)
     uf = Column(String(2), nullable=False)
+    simples = Column(Boolean, nullable=True)
