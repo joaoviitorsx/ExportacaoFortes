@@ -7,9 +7,9 @@ from front.src.utils.path import resourcePath
 
 def main(page: ft.Page):
     page.title = "SPED → Fortes Fiscal"
-    page.window.height = 832
-    page.window.width = 632
-    page.window.resizable = False
+    page.window.height = 880
+    page.window.width = 680
+    #page.window.resizable = False
     page.theme_mode = ft.ThemeMode.LIGHT
 
     page.window.icon = resourcePath("front/src/assets/icone.ico")
@@ -32,11 +32,16 @@ def main(page: ft.Page):
 
         elif page.route.startswith("/main"):
             empresa_id = None
+            nome_empresa = ""
             if "?empresa=" in page.route:
-                empresa_id = int(page.route.split("=")[-1])
-
+                params = page.route.split("?")[1]
+                for param in params.split("&"):
+                    if param.startswith("empresa="):
+                        empresa_id = int(param.split("=")[1])
+                    elif param.startswith("nome="):
+                        nome_empresa = param.split("=")[1].replace("%20", " ")
             if empresa_id is not None:
-                page.views.append(MainView(page, empresa_id))
+                page.views.append(MainView(page, empresa_id, nome_empresa))
             else:
                 page.go("/")
 
