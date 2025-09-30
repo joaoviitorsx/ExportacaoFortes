@@ -3,8 +3,7 @@ from ..components.header import Header
 from ..components.actionButton import ActionButton
 from ..routes.empresaRoute import EmpresaRoute
 from ..utils.path import resourcePath
-from ..components.card import Card  # <- usando o card customizado
-
+from ..components.card import Card
 
 def EmpresaView(page: ft.Page) -> ft.View:
     page.title = "Selecionar Empresa"
@@ -13,7 +12,6 @@ def EmpresaView(page: ft.Page) -> ft.View:
     page.bgcolor = "#F5F6FA"
     page.padding = 30
 
-    # --- Buscar empresas ---
     empresas = EmpresaRoute.listarEmpresas()
 
     dropdown = ft.Dropdown(
@@ -30,7 +28,6 @@ def EmpresaView(page: ft.Page) -> ft.View:
     btn_entrar = ActionButton("Entrar", disabled=True, color="primary")
     btn_cadastrar = ActionButton("Cadastrar Empresa", color="success")
 
-    # --- Eventos ---
     def on_change(e):
         btn_entrar.disabled = dropdown.value is None
         page.update()
@@ -38,7 +35,12 @@ def EmpresaView(page: ft.Page) -> ft.View:
     def entrar(e):
         if dropdown.value:
             empresa_id = int(dropdown.value)
-            page.go(f"/main?empresa={empresa_id}")
+            razao_social = ""
+            for opt in dropdown.options:
+                if opt.key == dropdown.value:
+                    razao_social = opt.text
+                    break
+            page.go(f"/main?empresa={empresa_id}&nome={razao_social.replace(' ', '%20')}")
 
     def cadastrar(e):
         page.go("/cadastro")
@@ -47,7 +49,6 @@ def EmpresaView(page: ft.Page) -> ft.View:
     btn_entrar.on_click = entrar
     btn_cadastrar.on_click = cadastrar
 
-    # --- Conteúdo central ---
     conteudo = ft.Column(
         [
             ft.Image(
