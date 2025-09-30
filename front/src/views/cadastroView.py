@@ -108,7 +108,6 @@ def CadastroView(page: ft.Page) -> ft.View:
     btn_salvar.on_click = salvar
     btn_voltar.on_click = voltar
 
-    # --- Conteúdo do card ---
     conteudo = ft.Column(
         [
             ft.Text(
@@ -135,6 +134,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         content=conteudo,
         icon=ft.Icons.ADD_BUSINESS,
         width=500,
+        height=420
     )
 
     return ft.View(
