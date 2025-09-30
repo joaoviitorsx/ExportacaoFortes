@@ -5,7 +5,7 @@ from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
 from ..routes.fsRoute import FsRoute
 
-def MainView(page: ft.Page):
+def MainView(page: ft.Page, id: int):
     page.title = "Exportação SPED → Fortes Fiscal"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -19,11 +19,11 @@ def MainView(page: ft.Page):
         "Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False, color="success"
     )
 
-    uploader_card = UploadCard(on_file_selected=lambda f: file_selected(f))
+    uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
 
     selected_files = []
 
-    def file_selected(filenames):
+    def fileSelected(filenames):
         nonlocal selected_files
         selected_files = filenames
         btnProcessar.disabled = False
@@ -33,8 +33,7 @@ def MainView(page: ft.Page):
         notificacao(page, "Arquivo selecionado", ", ".join(filenames), tipo="info")
 
     def resetarView():
-        page.clean()
-        MainView(page)
+        page.go(f"/main?empresa={id}")
 
     def processar(e):
         if btnProcessar.text == "Processar Novamente":
@@ -46,11 +45,10 @@ def MainView(page: ft.Page):
             return
 
         btnProcessar.disabled = True
-        uploader_card.disableRefresh()
-        uploader_card.showProgress(True)
+        uploaderCard.disableRefresh()
+        uploaderCard.showProgress(True)
         page.update()
 
-        # aqui o usuário escolhe onde salvar
         save_dialog = ft.FilePicker(on_result=salvarArquivo)
         page.overlay.append(save_dialog)
         page.update()
@@ -61,41 +59,54 @@ def MainView(page: ft.Page):
     def salvarArquivo(result: ft.FilePickerResultEvent):
         if result.path:
             resposta = FsRoute.processarFs(
-                empresa_id=1,
+                empresa_id=id,
                 arquivos=selected_files,
                 output_path=result.path,
             )
 
             if resposta["status"] == "ok":
-                uploader_card.updateProgress(100, "Concluído!")
+                uploaderCard.updateProgress(100, "Concluído!")
                 notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
                 btnDownload.visible = True
                 btnProcessar.disabled = False
                 btnProcessar.text = "Processar Novamente"
             else:
-                uploader_card.updateProgress(0, "Erro no processamento")
+                uploaderCard.updateProgress(0, "Erro no processamento")
                 notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
                 btnProcessar.disabled = False
 
             page.update()
 
     btnProcessar.on_click = processar
+    btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color=ft.Colors.BLUE_600)
+    btn_voltar.on_click = lambda e: page.go("/")
 
-    page.add(
-        ft.Column(
-            [
-                Header(),
-                uploader_card,
-                ft.Row(
-                    [btnProcessar, btnDownload],
-                    spacing=20,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                Header.footer(),
-            ],
-            spacing=17,
-            expand=True,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            scroll=ft.ScrollMode.AUTO,
-        )
+    return ft.View(
+        route=f"/main?empresa={id}",
+        controls=[
+            ft.Column(
+                [
+                    ft.Container(
+                        content=ft.Row(
+                            [btn_voltar],
+                            alignment=ft.MainAxisAlignment.START,
+                        ),
+                        padding=ft.padding.only(bottom=10),
+                    ),
+
+                    Header(),
+                    uploaderCard,
+                    ft.Row(
+                        [btnProcessar, btnDownload],
+                        spacing=20,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                    Header.footer(),
+                ],
+                spacing=17,
+                expand=True,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                scroll=ft.ScrollMode.AUTO,
+            )
+        ],
     )
