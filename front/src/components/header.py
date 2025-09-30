@@ -36,7 +36,6 @@ class Header(ft.Column):
         ]
 
     def footer():
-
         return ft.Container(
             content=ft.Column([
                 ft.Divider(color=ft.Colors.GREY_300, opacity=0.3),
@@ -55,5 +54,7 @@ class Header(ft.Column):
                     ft.Text("Suporte: suporte@realize.com.br", size=10, color=ft.Colors.GREY_500),
                 ], spacing=8, alignment=ft.MainAxisAlignment.CENTER)
             ]),
-            margin=ft.margin.only(top=48)
+            margin=ft.margin.only(top=6)
         )
+    
+    
