@@ -1,20 +1,36 @@
 from back.src.controllers.empresaController import EmpresaController
+from back.src.utils.validadores import removedorCaracteres
 
 class EmpresaRoute:
     @staticmethod
-    def listar_empresas():
+    def listarEmpresas():
         try:
             controller = EmpresaController()
-            return controller.listar_empresas()
+            return controller.listarEmpresas()
         except Exception as e:
             print(f"[ERRO] Falha ao listar empresas: {e}")
             return []
 
     @staticmethod
-    def cadastrar_empresa(razao_social: str, cnpj: str):
+    def cadastrarEmpresa(dados: dict):
         try:
             controller = EmpresaController()
-            return controller.cadastrar_empresa(razao_social, cnpj)
+            cnpjLimpo = removedorCaracteres(dados["cnpj"])
+            return controller.cadastrarEmpresas(
+                dados["razao_social"],
+                cnpjLimpo,
+                dados["uf"],
+                dados["simples"],
+            )
         except Exception as e:
             print(f"[ERRO] Falha ao cadastrar empresa: {e}")
+            return None
+
+    @staticmethod
+    def buscarCnpj(cnpj: str):
+        try:
+            controller = EmpresaController()
+            return controller.buscarCnpj(cnpj)
+        except Exception as e:
+            print(f"[ERRO] Falha ao buscar CNPJ: {e}")
             return None
