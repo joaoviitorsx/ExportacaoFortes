@@ -93,7 +93,7 @@ def EmpresaView(page: ft.Page) -> ft.View:
                         alignment=ft.alignment.center,
                         expand=True,
                     ),
-                    Header.footer(),
+                    #Header.footer(),
                 ],
                 spacing=15,
                 expand=True,

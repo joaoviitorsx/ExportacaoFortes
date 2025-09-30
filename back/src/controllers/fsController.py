@@ -12,26 +12,32 @@ class FsController:
         self.arquivos = arquivos
         self.output_path = output_path
 
-    def processar(self) -> str:
-        # 1. Rodar ETL e persistir registros
+    def processar(self) -> list:
+        etapas = []
+
+        session_icms = getSessionICMS()
+        session_export = getSessionFS()
+
+        etapas.append({"percent": 12, "mensagem": "Atualizando fornecedores..."})
+        repo = FornecedorRepository(session_export)
+        fornecedor_service = FornecedorService(repo)
+        fornecedor_service.processar(self.empresa_id)
+        
+        etapas.append({"percent": 42, "mensagem": "Sincronizando produtos..."})
+        transfer = TransferDataService(session_icms, session_export)
+        transfer.sincronizarEmpresa(self.empresa_id)
+
+        etapas.append({"percent": 72, "mensagem": "Executando ETL..."})
         session = getSessionFS()
         pipeline = PipelineService(session, self.empresa_id, self.arquivos)
         pipeline.executar()
 
-        # 2. Sincronizar produtos entre ICMS e Exportação
-        session_icms = getSessionICMS()
-        session_export = getSessionFS()
-        transfer = TransferDataService(session_icms, session_export)
-        transfer.sincronizarEmpresa(self.empresa_id)
+        etapas.append({"percent": 100, "mensagem": "Processamento concluído."})
 
-        # 3. Atualizar fornecedores
-        repo = FornecedorRepository(session_export)
-        fornecedor_service = FornecedorService(repo)
-        fornecedor_service.processar(self.empresa_id)
+        return etapas
 
-        # 4. Gerar arquivo .fs
+    def arquivoFs(self) -> str:
         gerador = GerarArquivo(self.empresa_id, self.output_path)
         file_path = gerador.gerar()
-
-        print("Processo finalizado com sucesso!")
+        print("Arquivo .fs gerado com sucesso!")
         return file_path

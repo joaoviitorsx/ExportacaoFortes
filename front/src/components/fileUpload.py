@@ -9,7 +9,7 @@ class UploadArea(ft.Container):
                 [
                     ft.Icon(name=ft.Icons.UPLOAD_FILE, size=40, color=ft.Colors.BLUE_GREY),
                     ft.Text(
-                        "Clique para selecionar ou arraste o arquivo aqui",
+                        "Clique para selecionar",
                         size=13,
                         color=ft.Colors.GREY_700,
                         text_align=ft.TextAlign.CENTER,

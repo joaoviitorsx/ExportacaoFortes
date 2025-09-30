@@ -8,7 +8,7 @@ class ProgressBar(ft.Column):
             expand=True,
         )
 
-        self.bar = ft.ProgressBar(width=520, height=12, value=0, bgcolor="#ddd", border_radius=6)
+        self.bar = ft.ProgressBar(width=620, height=12, value=0, bgcolor="#ddd", border_radius=6)
         self.status = ft.Text("Aguardando processamento...", size=14, color="grey")
 
         self.controls = [

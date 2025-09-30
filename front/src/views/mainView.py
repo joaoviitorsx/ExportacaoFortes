@@ -1,11 +1,13 @@
 import flet as ft
+
+from ..components.card import Card
+from ..routes.fsRoute import FsRoute
 from ..components.header import Header
 from ..components.fileUpload import UploadCard
 from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
-from ..routes.fsRoute import FsRoute
 
-def MainView(page: ft.Page, id: int):
+def MainView(page: ft.Page, id: int, nome_empresa: str):
     page.title = "Exportação SPED → Fortes Fiscal"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -20,22 +22,24 @@ def MainView(page: ft.Page, id: int):
     )
 
     uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
-
     selected_files = []
+    processado_ok = False
 
     def fileSelected(filenames):
-        nonlocal selected_files
+        nonlocal selected_files, processado_ok
         selected_files = filenames
+        processado_ok = False
         btnProcessar.disabled = False
         btnProcessar.text = "Processar Arquivo"
         btnDownload.visible = False
         page.update()
         notificacao(page, "Arquivo selecionado", ", ".join(filenames), tipo="info")
 
-    def resetarView():
-        page.go(f"/main?empresa={id}")
-
+    def resetarView():    
+        page.go(f"/main?empresa={id}&nome={nome_empresa.replace(' ', '%20')}")
+        
     def processar(e):
+        nonlocal processado_ok
         if btnProcessar.text == "Processar Novamente":
             resetarView()
             return
@@ -49,11 +53,39 @@ def MainView(page: ft.Page, id: int):
         uploaderCard.showProgress(True)
         page.update()
 
+        resposta = FsRoute.processarFs(
+            empresa_id=id,
+            arquivos=selected_files,
+            output_path=None,
+        )
+
+        if resposta["status"] == "ok":
+            for etapa in resposta.get("etapas", []):
+                uploaderCard.updateProgress(etapa["percent"], etapa["mensagem"])
+                page.update()
+            btnDownload.visible = True
+            btnProcessar.disabled = False
+            btnProcessar.text = "Processar Novamente"
+            processado_ok = True
+            notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
+        else:
+            uploaderCard.updateProgress(0, "Erro no processamento")
+            notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+            btnProcessar.disabled = False
+            processado_ok = False
+
+        page.update()
+
+    def escolherLocal(e):
+        if not processado_ok:
+            notificacao(page, "Erro", "Você precisa processar antes de baixar.", tipo="erro")
+            return
+
         save_dialog = ft.FilePicker(on_result=salvarArquivo)
         page.overlay.append(save_dialog)
         page.update()
         save_dialog.save_file(
-            file_name="Exportacao Fortes.fs", allowed_extensions=["fs"]
+            file_name="Exportacao_Fortes.fs", allowed_extensions=["fs"]
         )
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
@@ -65,19 +97,30 @@ def MainView(page: ft.Page, id: int):
             )
 
             if resposta["status"] == "ok":
-                uploaderCard.updateProgress(100, "Concluído!")
-                notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
-                btnDownload.visible = True
-                btnProcessar.disabled = False
-                btnProcessar.text = "Processar Novamente"
+                notificacao(page, "Download pronto!", f"Arquivo salvo em {result.path}", tipo="sucesso")
             else:
-                uploaderCard.updateProgress(0, "Erro no processamento")
                 notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
-                btnProcessar.disabled = False
 
             page.update()
 
+    card_empresa = Card(
+        title=None,
+        content=ft.Row(
+            [
+                ft.Text(f"Empresa: ", size=13, color=ft.Colors.GREY_700),
+                ft.Text(f"{nome_empresa}", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
+                ft.Text(f"(ID: {id})", size=12, color=ft.Colors.GREY_500),
+            ],
+            spacing=8,
+            alignment=ft.MainAxisAlignment.START,
+        ),
+        icon=None,
+        height=None,
+    )
+
     btnProcessar.on_click = processar
+    btnDownload.on_click = escolherLocal
+
     btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color=ft.Colors.BLUE_600)
     btn_voltar.on_click = lambda e: page.go("/")
 
@@ -87,14 +130,11 @@ def MainView(page: ft.Page, id: int):
             ft.Column(
                 [
                     ft.Container(
-                        content=ft.Row(
-                            [btn_voltar],
-                            alignment=ft.MainAxisAlignment.START,
-                        ),
+                        content=ft.Row([btn_voltar], alignment=ft.MainAxisAlignment.START),
                         padding=ft.padding.only(bottom=10),
                     ),
-
                     Header(),
+                    card_empresa,
                     uploaderCard,
                     ft.Row(
                         [btnProcessar, btnDownload],

@@ -2,18 +2,34 @@ from back.src.controllers.fsController import FsController
 
 class FsRoute:
     
-    def processarFs(empresa_id: int, arquivos: list[str], output_path: str) -> str:
+    def processarFs(empresa_id: int, arquivos: list[str], output_path: str):
         try:
             controller = FsController(empresa_id, arquivos, output_path)
-            caminho = controller.processar()
+            etapas = controller.processar()
             return {
                 "status": "ok",
-                "mensagem": "Arquivo gerado com sucesso",
-                "caminho": caminho
+                "mensagem": "Processamento concluído",
+                "etapas": etapas
             }
         except Exception as e:
             return {
                 "status": "erro",
                 "mensagem": str(e),
-                "caminho": None
+                "etapas": []
+            }
+        
+    def baixarFs(empresa_id: int, arquivos: list[str], output_path: str):
+        try:
+            controller = FsController(empresa_id, arquivos, output_path)
+            file_path = controller.arquivoFs()
+            return {
+                "status": "ok",
+                "mensagem": f"Arquivo gerado em {file_path}",
+                "file_path": file_path
+            }
+        except Exception as e:
+            return {
+                "status": "erro",
+                "mensagem": str(e),
+                "file_path": None
             }
