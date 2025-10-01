@@ -28,7 +28,7 @@ def builderPAR(dados: dict) -> str:
     cod_pais = digitos(dados.get("cod_pais")) or "1058"
     cod_pais = cod_pais[:4]
     exterior = "S" if cod_pais != "1058" else "N"
-    ind_icms = "1" if ie else "3"
+    ind_icms = "1" if ie and any(c.isdigit() for c in ie) else "3"
 
     simples = str(dados.get("simples", "")).upper()
     if "MEI" in simples:
