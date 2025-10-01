@@ -1,62 +1,74 @@
-def builderINM(c190_data: dict, uf: str) -> str:
-    def num(valor) -> float:
-        try:
-            return float(valor or 0)
-        except (ValueError, TypeError):
-            return 0.0
+from typing import Dict, Any
+from ....utils.fsFormat import formatarValor
 
-    valor_operacao = num(c190_data.get("vl_opr"))
-    cfop = str(c190_data.get("cfop") or "")
-    base_icms = num(c190_data.get("vl_bc_icms"))
-    aliq_icms = num(c190_data.get("aliq_icms"))
-    valor_icms = num(c190_data.get("vl_icms"))
-    valor_ipi = num(c190_data.get("vl_ipi"))
-    # No SPED, o C190 não detalha a base de cálculo do IPI,
-    # então usaremos 0.0 como placeholder.
-    base_ipi = 0.0
-    isentas_ipi = 0.0
-    outras_ipi = 0.0
+def builderINM(dados: Dict[str, Any]) -> str:
+    campos = [''] * 34
 
+    valor_operacao = dados.get("vl_opr") or 0.0
+    uf = dados.get("uf") or ""
+    cfop = dados.get("cfop") or ""
+    base_icms = dados.get("vl_bc_icms") or 0.0
+    aliq_icms = dados.get("aliq_icms") or 0.0
+    valor_icms = dados.get("vl_icms") or 0.0
+    valor_ipi = dados.get("vl_ipi") or 0.0
+    
+    valor_icms_st = dados.get("vl_icms_st") or 0.0
+    
+    empresa_simples = dados.get("empresa_simples", False)
+    
+    cst_icms = str(dados.get("cst_icms") or "").zfill(3)
+    csta = ""
+    cstb = ""
+    csosn_cod = ""
+    csosn = ""
 
-    # --- CST ICMS (separa primeiro dígito do restante) ---
-    cst_icms = str(c190_data.get("cst_icms") or "").zfill(3)  # força 3 dígitos
-    csta = cst_icms[0]       # ex: "0"
-    cstb = cst_icms[1:]      # ex: "10"
+    if empresa_simples:
+        csosn_cod = cst_icms[0] if cst_icms else ""
+        csosn = cst_icms[1:] if len(cst_icms) > 1 else ""
+    else:
+        csta = cst_icms[0] if cst_icms else ""
+        cstb = cst_icms[1:] if len(cst_icms) > 1 else ""
 
-    # --- Tratamento de isentas e outras para ICMS ---
-    isentas_icms = 0.0
-    outras_icms = 0.0
-    if cstb in ["40", "41"]:
-        isentas_icms = valor_operacao
-    elif cstb in ["50", "51", "90"]:
-        outras_icms = valor_operacao
+    # Lógica para Isentas e Outras de ICMS
+    isentas_icms = valor_operacao if cstb in ["40", "41", "50", "60"] else 0.0
+    outras_icms = valor_operacao if cstb in ["90"] else 0.0
 
-    # --- Montagem dos campos INM ---
-    campos = [
-        "INM",                       # 01 - Tipo de Registro
-        f"{valor_operacao:.2f}",     # 02 - Valor Contábil
-        uf,                          # 03 - UF
-        cfop,                        # 04 - CFOP
-        "",                          # 05 - CFOP p/ Transferência Automática
-        f"{base_icms:.2f}",          # 06 - Base de Cálculo do ICMS
-        f"{aliq_icms:.2f}",          # 07 - Alíquota do ICMS
-        f"{valor_icms:.2f}",         # 08 - Valor do ICMS
-        f"{isentas_icms:.2f}",       # 09 - Isentas do ICMS
-        f"{outras_icms:.2f}",        # 10 - Outras do ICMS
-        f"{base_ipi:.2f}",           # 11 - Base de Cálculo do IPI
-        f"{valor_ipi:.2f}",          # 12 - Valor do IPI
-        f"{isentas_ipi:.2f}",        # 13 - Isentas do IPI
-        f"{outras_ipi:.2f}",         # 14 - Outras do IPI
-        "N", "N", "N", "N",          # 15 a 18 - Indicadores Diversos
-        csta,                        # 19 - CST A
-        cstb,                        # 20 - CST B
-        "", "", "",                  # 21 a 23 - Reservado
-        "N", "N", "N",               # 24 a 26 - Indicadores
-        "",                          # 27 - Reservado
-        f"{0.0:.2f}", f"{0.0:.2f}",  # 28 a 29 - Reservado
-        f"{0.0:.2f}", f"{0.0:.2f}",  # 30 a 31 - Reservado
-        f"{0.0:.2f}", f"{0.0:.2f}",  # 32 a 33 - Reservado
-        f"{0.0:.2f}",                # 34 - Reservado
-    ]
+    substituicao_icms = "S" if valor_icms_st > 0 else "N"
+    substituicao_ipi = "S" if valor_ipi > 0 else "N" 
+    
+    campos[0] = "INM"                                    # 01 - Tipo de Registro
+    campos[1] = formatarValor(valor_operacao)            # 02 - Valor
+    campos[2] = uf                                       # 03 - UF
+    campos[3] = cfop                                     # 04 - CFOP
+    campos[4] = ""                                       # 05 - CFOP Transferencia (vazio por padrão)
+    campos[5] = formatarValor(base_icms)                 # 06 - Base de Calculo ICMS
+    campos[6] = formatarValor(aliq_icms)                 # 07 - Alíquota do ICMS (NOVO CAMPO NA LISTA)
+    campos[7] = formatarValor(valor_icms)                # 08 - Valor do ICMS
+    campos[8] = formatarValor(isentas_icms)              # 09 - Isentas do ICMS
+    campos[9] = formatarValor(outras_icms)               # 10 - Outras do ICMS
+    campos[10] = ""                                      # 11 - Base de Calculo do IPI (não disponível no C190)
+    campos[11] = formatarValor(valor_ipi)                # 12 - Valor do IPI
+    campos[12] = ""                                      # 13 - Isentas do IPI (lógica complexa, padrão 0)
+    campos[13] = ""                                      # 14 - Outras do IPI (lógica complexa, padrão 0)
+    campos[14] = substituicao_icms                       # 15 - Substituição ICMS 
+    campos[15] = substituicao_ipi                        # 16 - Substituição IPI
+    campos[16] = "N"                                     # 17 - Substituição COFINS (padrão 'N')
+    campos[17] = "N"                                     # 18 - Substituição PIS/PASEP (padrão 'N')
+    campos[18] = csta                                    # 19 - CSTA
+    campos[19] = cstb                                    # 20 - CSTB
+    campos[20] = csosn_cod                               # 21 - Codigo da Situação Tributaria do CSOSN
+    campos[21] = csosn                                   # 22 - CSOSN
+    campos[22] = ""                                      # 23 - CST IPI (não disponível no C190)
+    campos[23] = "N"                                     # 24 - COFINS Monofasico (padrão 'N')
+    campos[24] = "N"                                     # 25 - PIS Monofasico (padrão 'N')
+    campos[25] = "N"                                     # 26 - Calcula Fecop (padrão 'N')
+    campos[26] = ""                                      # 27 - Aliq. Subst. (Decreto)
+    campos[27] = ""                                      # 28 - Base de Calculo do FCP - Normal
+    campos[28] = ""                                      # 29 - Aliquota do FCP - Normal
+    campos[29] = ""                                      # 30 - Valor do FCP - Normal
+    campos[30] = ""                                      # 31 - Base de Calculo do FCP - Subst. Trib.
+    campos[31] = ""                                      # 32 - Alíquota do FCP - Subst. Trib.
+    campos[32] = ""                                      # 33 - Valor do FCP - Subst. Trib.
+    campos[33] = ""                                      # 34 - Aliquota do ICMS Deferido
 
     return "|".join(map(str, campos))

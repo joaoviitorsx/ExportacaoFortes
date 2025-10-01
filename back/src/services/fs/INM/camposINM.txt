@@ -1,0 +1,37 @@
+{
+    Tipo registro,
+    Valor,
+    UF,
+    CFOP,
+    CFOP Transferencia,
+    Base de Calculo ICMS,
+    Valor do ICMS,
+    Isento do ICMS,
+    Outras do ICMS,
+    Base de Calculo do IPI,
+    Valor do IPI,
+    Isentas do IPI,
+    Outras do IPI,
+    Substituição ICMS,
+    Substituição IPI,
+    Substituição COFINS,
+    Substituição PIS/PASEP,
+    CSTA,
+    CSTB,
+    Codigo da Situação tributaria do CSOSN,
+    CSOSN,
+    CST IPI,
+    COFINS Monofasico,
+    PIS Monofasico,
+    Calcula Fecop (Decreto 29.560/08)
+    Aliq. Subst. (dECRETO 29.560/08),
+    base de calculo do FCP - Normal,
+    Aliquota do FCP - Normal,
+    Valor do FCP - normal,
+    Base de Caluclo do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib,
+    Alíquota do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
+    Valor do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
+    Aliquota do ICMS Deferido
+}
+
+Campos 34 INM
