@@ -1,0 +1,13 @@
+{
+    Tipo de registro,
+    Versão do Leiaute,
+    Sistema Origem,
+    Data da Geraçãom
+    Empresa,
+    Data inicial dos lançamentos,
+    Data final dos lançamentos,
+    Comentário,
+    Aliquotas Especificas
+}
+
+9 campos do CAB

@@ -8,7 +8,7 @@ class ExportarCAB:
     def gerar(self, empresa_id: int):
         # Buscar empresa
         empresa = self.session.execute(
-            text("SELECT razao_social, simples FROM empresas WHERE id = :id"),
+            text("SELECT razao_social, aliq_espec FROM empresas WHERE id = :id"),
             {"id": empresa_id}
         ).mappings().first()
 
