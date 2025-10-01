@@ -7,19 +7,22 @@ class ExportarNFM:
         self.session = session
         self.empresa_id = empresa_id
 
-    def cabecalhos(self) -> List[Dict[str, Any]]:
+    def getNFM(self) -> List[Dict[str, Any]]:
         query = text(
             """
             SELECT
-                ind_oper, cod_mod, cod_part, ser, num_doc, cod_sit, chv_nfe,
-                dt_doc, dt_e_s, vl_doc, vl_desc, vl_merc, vl_frt, vl_seg,
-                vl_out_da, vl_bc_icms, vl_icms, vl_bc_icms_st, vl_icms_st,
-                vl_ipi, vl_pis, vl_cofins, ind_frt
-            FROM registro_c100
+                c.ind_oper, c.ind_emit, c.cod_part, c.cod_mod, c.cod_sit, c.ser,
+                c.num_doc, c.chv_nfe, c.dt_doc, c.dt_e_s, c.vl_doc, c.ind_pgto,
+                c.vl_desc, c.vl_merc, c.ind_frt, c.vl_frt, c.vl_seg, c.vl_out_da,
+                c.vl_bc_icms, c.vl_icms, c.vl_bc_icms_st, c.vl_icms_st, c.vl_ipi,
+                c.vl_pis, c.vl_cofins,
+                (SELECT filial FROM registro_0000 WHERE empresa_id = c.empresa_id LIMIT 1) as estabelecimento,
+                (SELECT COUNT(1) FROM registro_c170 WHERE c100_id = c.id) as qtd_itens
+            FROM registro_c100 c
             WHERE
-                empresa_id = :empresa_id
-                AND cod_mod IN ('01', '1B', '04', '55')
-            ORDER BY dt_doc, num_doc;
+                c.empresa_id = :empresa_id
+                AND c.cod_mod IN ('01', '1B', '04', '55') -- Filtro para modelos de NF de Mercadoria
+            ORDER BY c.dt_doc, c.num_doc;
             """
         )
         
@@ -27,13 +30,13 @@ class ExportarNFM:
         return list(result.mappings().all())
 
     def gerar(self) -> List[str]:
-        cabecalhos = self.cabecalhos()
-        if not cabecalhos:
+        documentos = self.getNFM()
+        if not documentos:
             return []
 
         linhas_nfm: List[str] = []
-        for dados_cabecalho in cabecalhos:
-            linha_formatada = builderNFM(dados_cabecalho)
+        for dados_doc in documentos:
+            linha_formatada = builderNFM(dados_doc)
             linhas_nfm.append(linha_formatada)
 
         return linhas_nfm
