@@ -1,38 +1,20 @@
 from typing import Dict, Any
-
 from ....utils.fsFormat import formatarValor
 
 def builderSNM(dados: Dict[str, Any]) -> str:
-    campos = [''] * 14
+    campos = [''] * 10
+    custo_aquisicao = dados.get("vl_opr")
+    base_calculo_st = dados.get("vl_bc_icms_st")
 
-    cst_icms = str(dados.get("cst_icms") or "000").zfill(3)
-    csta = cst_icms[0]
-    cstb = cst_icms[1:]
-
-    vl_opr = dados.get("vl_opr", 0.0)
-    valor_isentas = 0.0
-    valor_outras = 0.0
-
-    # Lógica condicional para os campos "Valor de Isentas" e "Valor de Outras"
-    if cstb in ('40', '41', '50'):
-        valor_isentas = vl_opr
-    elif cstb in ('90',): # Adicione outros CSTs se necessário
-        valor_outras = vl_opr
-    
-    campos[0] = "SNM"                                           # 1 - Tipo
-    campos[1] = str(dados.get("num_doc", ''))                   # 2 - Código do Documento
-    campos[2] = str(dados.get("cfop", ''))                      # 3 - CFOP
-    campos[3] = csta                                            # 4 - CSTA
-    campos[4] = cstb                                            # 5 - CSTB
-    campos[5] = formatarValor(dados.get("aliq_icms"))           # 6 - Alíquota do ICMS
-    
-    campos[6] = formatarValor(vl_opr)                           # 7 - Valor Contábil
-    campos[7] = formatarValor(dados.get("vl_bc_icms"))          # 8 - Base de Cálculo do ICMS
-    campos[8] = formatarValor(dados.get("vl_icms"))             # 9 - Valor do ICMS
-    campos[9] = formatarValor(valor_isentas)                    # 10 - Valor de Isentas
-    campos[10] = formatarValor(valor_outras)                    # 11 - Valor de Outras
-    campos[11] = formatarValor(dados.get("vl_bc_icms_st"))      # 12 - Base de Cálculo do ICMS ST
-    campos[12] = formatarValor(dados.get("vl_icms_st"))         # 13 - Valor do ICMS ST
-    campos[13] = formatarValor(dados.get("vl_ipi"))             # 14 - Valor do IPI
+    campos[0] = "SNM"                                     # Campo 1: Tipo de Registro
+    campos[1] = "1"                                       # Campo 2: Tipo (Agregação)
+    campos[2] = formatarValor(custo_aquisicao)            # Campo 3: Custo da Aquisição (vl_opr como aproximação)
+    campos[3] = ""                                        # Campo 4: Agregação (%) - Não disponível
+    campos[4] = formatarValor(base_calculo_st)            # Campo 5: Base de Cálculo (usando vl_bc_icms_st)
+    campos[5] = formatarValor(dados.get("aliq_icms"))     # Campo 6: Alíquota (Verificar se é a alíquota interna correta)
+    campos[6] = ""                                        # Campo 7: Crédito de Origem - Não disponível
+    campos[7] = ""                                        # Campo 8: Já Recolhido - Não disponível
+    campos[8] = "N"                                       # Campo 9: Calcula Fecop
+    campos[9] = "N"                                       # Campo 10: (Campo extra observado no padrão)
 
     return "|".join(campos)

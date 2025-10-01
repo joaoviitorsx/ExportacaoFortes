@@ -1,0 +1,13 @@
+{
+    Tipo Registro,
+    Tipo,
+    Custo da aquisição,
+    Agregação,
+    Base de Calculo,
+    Aliquota,
+    Credito de Origem,
+    Já Recolhido,
+    Calculo Fecop (Decreto 29.560/08)
+}
+
+9 campos SNM
