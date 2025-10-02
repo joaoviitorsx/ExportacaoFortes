@@ -1,4 +1,3 @@
-{
     Tipo de registro,
     Produto,
     CFOP,
@@ -23,9 +22,9 @@
     Credito de Origem,
     Subst. já Recolhido,
     Custo de Aquisição Antecip.,
-    Perc. Agregação Antecipadom
+    Perc. Agregação Antecipado,
     Aliquota interna, 
-    credito de origem,
+    Credito de Origem,
     antec. ja recolhido,
     base de calc. dif. aliquota,
     aliquota de origem,
@@ -34,6 +33,7 @@
     Base de calc. do IPI,
     Aliquota do IPI,
     Valor do IPI,
+    CST IPI,
     CST COFINS,
     CST PIS,
     Base de calculo COFINS,
@@ -43,6 +43,7 @@
     Valor Desconto,
     Valor total,
     Natureza da receita PIS,
+    Natureza da receita COFINS,
     Indicador Especial( central de distribuição) - PRODEPE,
     Codigo da Apuração - PRODEPE,
     Codigo da situação Tributaria do CSOSN,
@@ -59,8 +60,7 @@
     Pedido de Compra,
     Item do pedido de compra,
     Outras Despesas,
-    Outras Despesas,
-    Coidog COntabil,
+    Codigo Contabil,
     Item Não Compoe Valor Total,
     Natureza da Contribuição do Estorno COFINS,
     Natureza da contribuição do Estorno PIS,
@@ -77,6 +77,7 @@
     Base de Calculo - Diferencial de Aliquotas,
     Aliquota FECOP - Diferencial de Aliquotas,
     Aliquota de Origem - Diferencial de Aliquotas,
+    Aliquota de Destino - Diferencial de Aliquotas,
     Calculo Fecop(Decreto 29.560/08),
     Aliq. Subst. (Decreto 29.560/08),
     Exclusão da BC PIS/COFINS,
@@ -85,7 +86,6 @@
     Aliquota do FCP - Normal,
     Valor do FCP - Normal,
     Base de Calculo do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib,
-    Aliquota do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
     Aliquota do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
     Valor do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
     Ressarcimento Substituição Tributaria,
@@ -106,7 +106,6 @@
     Aliq. ICMS ST(%),
     Vr. Unit. BC. ICMS ST Ressarcimento,
     Codigo Retenção do ICMS,
-    ST,
     Codigo do Motibvo do Ressarcimento,
     Chave Eletronica Emitida Pelo Substituto,
     Participante Ret. ICMS ST,
@@ -123,6 +122,132 @@
     Valor ICMS Substituto,
     ICMS Efetivo,
     Decreto 20.686/99(AM)
-}
 
 campos do PNM com seus 124 dados
+
+campos = [
+        "PNM",                                          # 1  - Tipo de registro
+        str(dados.get("cod_item", ''))[:9],             # 2  - Codigo do Produto
+        str(dados.get("cfop", ''))[:4],                 # 3  - CFOP
+        "",                                             # 4  - CFOP Transferencia
+        csta,                                           # 5  - CSTA
+        cstb,                                           # 6  - CSTB
+        str(dados.get("unid", ''))[:6],                 # 7  - Unidade de Medida
+        formatarValor(dados.get("qtd"), 2),             # 8  - Quantidade
+        formatarValor(dados.get("vl_item")),            # 9  - Valor Bruto
+        "",                                             # 10 - Valor do IPI
+        tributacaoICMS(cstb, dados.get("aliquota_cadastro", "")),# 11 - Tributação ICMS
+        formatarValor(dados.get("vl_bc_icms")),         # 12 - Base de Calculo do ICMS
+        formatarValor(dados.get("aliq_icms")),          # 13 - Aliquota do ICMS
+        formatarValor(dados.get("vl_bc_icms_st")),      # 14 - Base Calc. Subst. Tributaria
+        formatarValor(dados.get("vl_icms_st")),         # 15 - ICMS Substituição
+        "",                                             # 16 - Tipo de Recolhimento
+        "",                                             # 17 - Tipo de Substituição
+        "",                                             # 18 - Custo Aquisição Subst. Trib.
+        "",                                             # 19 - Perc. Agreg. Substituição
+        "",                                             # 20 - Base de Calc. Subst. Trib
+        formatarValor(dados.get("aliq_st")),            # 21 - Aliquota Subst. Tributaria
+        "",                                             # 22 - Credito de Origem
+        "",                                             # 23 - Subst. já Recolhido
+        "",                                             # 24 - Custo de Aquisição Antecip.
+        "",                                             # 25 - Perc. Agregação Antecipadom
+        "",                                             # 26 - Aliquota interna
+        "",                                             # 27 - credito de origem
+        "",                                             # 28 - antec. ja recolhido
+        "",                                             # 29 - base de calc. dif. aliquota
+        "",                                             # 30 - aliquota de origem
+        "",                                             # 31 - aliquota itnerna
+        "",                                             # 32 - tipo tributacao IPI
+        formatarValor(dados.get("vl_bc_ipi")),          # 33 - Base de calc. do IPI
+        formatarValor(dados.get("aliq_ipi")),           # 34 - Aliquota do IPI
+        formatarValor(dados.get("vl_ipi")),             # 35 - Valor do IPI
+        str(dados.get("cst_ipi", ''))[:2],              # 36 - CST IPI
+        str(dados.get("cst_cofins", ''))[:2],           # 37 - CST COFINS
+        str(dados.get("cst_pis", ''))[:2],              # 38 - CST PIS
+        formatarValor(base_pis_cofins),                 # 39 - Base de calculo COFINS
+        formatarValor(base_pis_cofins),                 # 40 - base de calculo PIS
+        formatarValor(dados.get("frete_rateado")),      # 41 - Valor Frete
+        formatarValor(dados.get("seguro_rateado")),     # 42 - Valor Seguro
+        formatarValor(dados.get("vl_desc")),            # 43 - Valor Desconto
+        formatarValor(valor_total_item),                # 44 - Valor total
+        str(dados.get("cod_nat", ''))[:3],              # 45 - Natureza da receita PIS
+        "",                                             # 46 - Indicador Especial - PRODEPE
+        "",                                             # 47 - Codigo da Apuração - PRODEPE
+        "",                                             # 48 - Codigo da situação Tributaria do CSOSN
+        csta if csosn else "",                          # 49 - CSOSN
+        csosn,                                          # 50 - Tipo de Calculo COFINS
+        tipo_calc_cofins,                               # 51 - Aliquota COFINS(%)
+        formatarValor(dados.get("aliq_cofins")),        # 52 - Aliquota COFINS(R$)
+        formatarValor(dados.get("aliq_cofins_reais"), 4),# 53 - Valor COFINS
+        formatarValor(dados.get("vl_cofins")),          # 54 - Tipo de Calculo PIS
+        tipo_calc_pis,                                  # 55 - Aliquota PIS(%)
+        formatarValor(dados.get("aliq_pis")),           # 56 - Aliquota PIS(R$)
+        formatarValor(dados.get("aliq_pis_reais"), 4),  # 57 - Valor PIS
+        formatarValor(dados.get("vl_pis")),             # 58 - Codigo de Ajuste Fiscal
+        "",                                             # 59 - Pedido de Compra
+        "",                                             # 60 - Item do pedido de compra
+        "",                                             # 61 - Outras Despesas
+        formatarValor(dados.get("outras_desp_rateado")),# 62 - Outras Despesas
+        str(dados.get("cod_cta", ''))[:15],             # 63 - Coidog COntabil
+        "0",                                            # 64 - Item Não Compoe Valor Total
+        "",                                             # 65 - Natureza da Contribuição do Estorno COFINS
+        "",                                             # 66 - Natureza da contribuição do Estorno PIS
+        "",                                             # 67 - Natureza do Credito do Estorno COFINS
+        "",                                             # 68 - Natureza do Credito do Estorno PIS
+        "",                                             # 69 - FCI
+        "",                                             # 70 - Item Derivado de Petroleo
+        "",                                             # 71 - RECOPI
+        "",                                             # 72 - Percentual IPI Devolvido
+        "",                                             # 73 - Motivo da Devolução IPI
+        "",                                             # 74 - Indicador Especial de Incentivo
+        "",                                             # 75 - Valor ICMS Desonerado
+        "",                                             # 76 - Motivo da Desoneração do ICMS
+        "",                                             # 77 - Base de Calculo - Diferencial de Aliquotas
+        "",                                             # 78 - Aliquota FECOP - Diferencial de Aliquotas
+        "",                                             # 79 - Aliquota de Origem - Diferencial de Aliquotas
+        "",                                             # 80 - Calculo Fecop(Decreto 29.560/08)
+        "",                                             # 81 - Aliq. Subst. (Decreto 29.560/08)
+        "N",                                            # 82 - Exclusão da BC PIS/COFINS
+        "",                                             # 83 - Aliquota de Credito
+        "",                                             # 84 - Base de Calculo do FCP Normal
+        "",                                             # 85 - Aliquota do FCP - Normal
+        "",                                             # 86 - Valor do FCP - Normal
+        "",                                             # 87 - Base de Calculo do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib
+        "",                                             # 88 - Aliquota do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.
+        "",                                             # 89 - Aliquota do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.
+        "",                                             # 90 - Valor do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.
+        "N",                                            # 91 - Ressarcimento Substituição Tributaria
+        "",                                             # 92 - Especie do DOcuento Ressarcimento ST
+        "",                                             # 93 - Data de Documento Ressarcimento ST
+        "",                                             # 94 - Numero do Ducmento Ressarcimento ST
+        "",                                             # 95 - Serie do Docuemtno Ressarcimento ST
+        "",                                             # 96 - Chaves Eletronico do Documento Ressarcimento ST
+        "",                                             # 97 - Codigo do Participante do Documento Ressaricmento ST
+        "",                                             # 98 - Codigo do Item do Docuemnto Ressaricmento ST
+        "",                                             # 99 - Quantidade do Item do Documento Ressarcimento ST
+        "",                                             # 100 - Valor Unitario do Item do Documento Ressarcimento ST
+        "",                                             # 101 - Valor Unitario Base Calculo ICMS Pago por Substituição
+        "",                                             # 102 - Vr. Unit. BC. ICMS Remetente
+        "",                                             # 103 - Aliq. ICMS(%)
+        "",                                             # 104 - Vr. Unit. BC. ICMS Retenção
+        "",                                             # 105 - Vr. Unit. Credito ICMS
+        "",                                             # 106 - Aliq. ICMS ST(%)
+        "",                                             # 107 - Vr. Unit. BC. ICMS ST Ressarcimento
+        "",                                             # 108 - Codigo Retenção do ICMS
+        "",                                             # 109 - ST
+        "",                                             # 110 - Codigo do Motibvo do Ressarcimento
+        "",                                             # 111 - Chave Eletronica Emitida Pelo Substituto
+        "",                                             # 112 - Participante Ret. ICMS ST
+        "",                                             # 113 - Numero do Doc. Ret. ICMS ST
+        "",                                             # 114 - Serie Doc. Ret. ICMS ST
+        "",                                             # 115 - Cod. Item Ressarcimento Ret. ICMS ST
+        "",                                             # 116 - Cod. Documento de Arrecadação
+        "",                                             # 117 - Numero do DOC. de Arrecadação
+        "",                                             # 118 - Base de Calculo de Ajuste de ICMS
+        "",                                             # 119 - Aliquota de Ajuste de ICMS
+        "",                                             # 120 - Valor de Ajuste de ICMS
+        "N",                                            # 121 - Aliquota do ICMS Diferimento
+        "",                                             # 122 - Decreto 46.303/2018(PE)
+        "N",                                            # 123 - Valor ICMS Substituto
+        ""                                              # 124 - ICMS Efetivo / Decreto 20.686/99(AM)
+    ]
