@@ -7,38 +7,38 @@ class ExportarSNM:
         self.session = session
         self.empresa_id = empresa_id
 
-    def subtotais_st(self) -> List[Dict[str, Any]]:
+    def dados(self) -> List[Dict[str, Any]]:
         query = text(
             """
-            SELECT
+            SELECT DISTINCT
                 c190.c100_id,
                 c190.vl_opr,
-                c190.vl_bc_icms_st,  -- Campo correto para a Base de Cálculo
-                c190.aliq_icms,       -- Usado para a alíquota (verificar se é a alíquota interna correta)
-                c190.vl_icms_st       -- Pode ser útil para o campo "Já Recolhido", dependendo da regra
+                c190.vl_bc_icms_st,
+                COALESCE(p.aliquota, c190.aliq_icms) as aliq_icms,       
+                c190.vl_icms_st       
             FROM registro_c190 AS c190
             JOIN registro_c100 AS c100 ON c190.c100_id = c100.id
+            LEFT JOIN registro_c170 AS c170 ON c170.c100_id = c100.id
+            LEFT JOIN produtos AS p ON p.codigo = c170.cod_item AND p.empresa_id = c170.empresa_id
             WHERE
-                c190.empresa_id = :empresa_id
-                AND c100.ind_oper = '0'
-                AND c190.vl_icms_st > 0;
+                c190.empresa_id = :empresa_id;
             """
         )
         result = self.session.execute(query, {"empresa_id": self.empresa_id})
         return list(result.mappings().all())
 
     def gerar(self) -> Dict[int, List[str]]:
-        subtotais = self.subtotais_st()
+        subtotais = self.dados()
         if not subtotais:
             return {}
 
-        snm_por_nota: Dict[int, List[str]] = {}
+        snm: Dict[int, List[str]] = {}
         for dados_subtotal in subtotais:
             c100_id = dados_subtotal["c100_id"]
-            if c100_id not in snm_por_nota:
-                snm_por_nota[c100_id] = []
+            if c100_id not in snm:
+                snm[c100_id] = []
             
             linha_formatada = builderSNM(dados_subtotal)
-            snm_por_nota[c100_id].append(linha_formatada)
+            snm[c100_id].append(linha_formatada)
             
-        return snm_por_nota
+        return snm
