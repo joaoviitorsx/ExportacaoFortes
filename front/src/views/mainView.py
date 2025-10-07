@@ -1,4 +1,5 @@
 import os
+import asyncio
 import flet as ft
 
 from ..components.card import Card
@@ -45,16 +46,17 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         btnProcessar.disabled = True
         btnProcessar.text = "Processar Arquivo"
         btnDownload.visible = False
-        
         uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
         main_column.controls[3] = uploaderCard
-        
         page.update()
 
     def processar(e):
         nonlocal processado_ok
+
         if btnProcessar.text == "Processar Novamente":
             resetarView()
+            btnProcessar.icon = ft.Icons.PLAY_ARROW
+            page.update()
             return
 
         if not selected_files:
@@ -64,38 +66,59 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         btnProcessar.disabled = True
         uploaderCard.disableRefresh()
         uploaderCard.showProgress(True)
+        uploaderCard.updateProgress(5, "Iniciando processamento...")
         page.update()
 
-        resposta = FsRoute.processarFs(
-            empresa_id=id,
-            arquivos=selected_files,
-            output_path=None,
-        )
+        async def executarProcessamento():
+            nonlocal processado_ok
+            try:
+                resposta = FsRoute.processarFs(
+                    empresa_id=id,
+                    arquivos=selected_files,
+                    output_path=None,
+                )
+                await asyncio.sleep(0.5)  # Simula um pequeno atraso para melhor UX
 
-        if resposta["status"] == "ok":
-            for etapa in resposta.get("etapas", []):
-                uploaderCard.updateProgress(etapa["percent"], etapa["mensagem"])
+                if resposta["status"] == "ok":
+                    for etapa in resposta.get("etapas", []):
+                        uploaderCard.updateProgress(etapa["percent"], etapa["mensagem"])
+                        await asyncio.sleep(0.1)
+                        page.update()
+                    
+                    btnDownload.visible = True
+                    btnProcessar.disabled = False
+                    btnProcessar.text = "Processar Novamente"
+                    btnProcessar.icon = ft.Icons.REFRESH
+                    processado_ok = True
+                    notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
+                else:
+                    uploaderCard.updateProgress(0, "Erro no processamento")
+                    notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+                    btnProcessar.disabled = False
+                    btnProcessar.text = "Processar Arquivo"
+                    btnProcessar.icon = ft.Icons.PLAY_ARROW
+                    processado_ok = False
+
+            except Exception as e:
+                notificacao(page, "Erro", f"Erro inesperado: {str(e)}", tipo="erro")
+                btnProcessar.disabled = False
+                btnProcessar.text = "Processar Arquivo"
+                btnProcessar.icon = ft.Icons.PLAY_ARROW
+                processado_ok = False
+            
+            finally:
                 page.update()
-            btnDownload.visible = True
-            btnProcessar.disabled = False
-            btnProcessar.text = "Processar Novamente"
-            processado_ok = True
-            notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
-        else:
-            uploaderCard.updateProgress(0, "Erro no processamento")
-            notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
-            btnProcessar.disabled = False
-            processado_ok = False
 
-        page.update()
+        page.run_task(executarProcessamento)
 
     def escolherLocal(e):
+        nonlocal processado_ok
         if not processado_ok:
             notificacao(page, "Erro", "Você precisa processar antes de baixar.", tipo="erro")
             return
         
         uploaderCard.showProgress(False)
-        uploaderCard.showDownloadProgress(True)
+        
         notificacao(page, "Aguarde", "Escolha o local para salvar o arquivo .fs", tipo="info")
         page.update()
 
@@ -107,8 +130,11 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         )
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
-        uploaderCard.showDownloadProgress(False)
         if result.path:
+            uploaderCard.showDownloadProgress(True)
+            notificacao(page, "Gerando arquivo", "O arquivo está sendo gerado...", tipo="info")
+            page.update()
+            
             resposta = FsRoute.baixarFs(
                 empresa_id=id,
                 arquivos=selected_files,
@@ -119,9 +145,13 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
                 uploaderCard.finishDownloadProgress()
                 notificacao(page, "Download pronto!", f"Arquivo salvo em {result.path}", tipo="sucesso")
             else:
+                uploaderCard.showDownloadProgress(False)
                 notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+        else:
+            uploaderCard.showDownloadProgress(False)
+            notificacao(page, "Cancelado", "Download cancelado pelo usuário", tipo="info")
 
-            page.update()
+        page.update()
 
     card_empresa = Card(
         title=None,
