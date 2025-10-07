@@ -150,4 +150,4 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         "N",                                                 # 124. Decreto 20.686/99(AM)
     ]
 
-    return "|".join(campos) + "|"
+    return "|".join(campos)

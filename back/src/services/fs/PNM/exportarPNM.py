@@ -119,7 +119,7 @@ class ExportarPNM:
             dados_completos = {
                 **item_c170,
                 **head,
-                **prod, # Agora inclui aliquota_cadastro, ncm, cod_cest
+                **prod,
                 "frete_rateado": round(float(head.get("vl_frt") or 0.0) * proporcao, 2),
                 "seguro_rateado": round(float(head.get("vl_seg") or 0.0) * proporcao, 2),
                 "outras_desp_rateado": round(float(head.get("vl_out_da") or 0.0) * proporcao, 2),
