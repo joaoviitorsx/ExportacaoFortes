@@ -1,4 +1,3 @@
-{
     Tipo de registro,
     Codigo,
     Nome,
@@ -39,6 +38,5 @@
     Situação Tributaria,
     Produtor Rural,
     Indicativo da Aquisição
-}
 
 40 campos PAR
