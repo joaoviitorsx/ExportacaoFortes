@@ -201,7 +201,7 @@ def reposicionarNotificacao(page: ft.Page):
         
         posicao_atual = 20
         for notif in notifications_validas:
-            notif.bottom = posicao_atual
+            notif.top = posicao_atual
             altura = notif.data.get("altura", 80) if notif.data else 80
             posicao_atual += altura + 12 
             
