@@ -1,6 +1,6 @@
 import flet as ft
 from ..components.card import Card
-from ..components.progressBar import ProgressBar
+from ..components.progressBar import ProgressBar, DownloadProgressBar
 
 class UploadArea(ft.Container):
     def __init__(self, on_pick):
@@ -95,6 +95,9 @@ class UploadCard(Card):
         self.progress = ProgressBar()
         self.progress.visible = False
 
+        self.download_progress = DownloadProgressBar()
+        self.download_progress.visible = False
+
         self.content_column = ft.Column(
             [
                 ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
@@ -102,6 +105,7 @@ class UploadCard(Card):
                 self.upload_area,
                 self.file_picker,
                 self.progress,
+                self.download_progress,
             ],
             spacing=12,
         )
@@ -152,4 +156,19 @@ class UploadCard(Card):
     def updateProgress(self, percent: int, message: str):
         self.progress.set_progress(percent, message)
         self.showProgress(True)
+        self.update()
+
+    def showDownloadProgress(self, visible=True):
+        self.download_progress.visible = visible
+        if visible:
+            self.download_progress.start()
+        self.update()
+
+    def updateDownloadProgress(self, percent: int, message: str):
+        self.download_progress.set_progress(percent, message)
+        self.showDownloadProgress(True)
+        self.update()
+
+    def finishDownloadProgress(self):
+        self.download_progress.finish()
         self.update()
