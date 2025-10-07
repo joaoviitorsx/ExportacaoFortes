@@ -1,4 +1,3 @@
-{
     Tipo Registro,
     Estabelecimento,
     Operação,
@@ -47,7 +46,6 @@
     Serviço,
     Data de Entrada no Estado,
     Frete por conta,
-    Frete por Conta,
     Fatura,
     Numero do EEC,
     Numero do Cupom,
@@ -72,6 +70,7 @@
     Motivo do Cancelamento,
     Natureza da Operação,
     Codigo da informação Complementar,
+    Completo da Informacao Complementar,
     Hora da Saída,
     UF de Embarque,
     Local de Embarque,
@@ -90,6 +89,5 @@
     Data de Escrituração,
     Total do FCP Substituição,
     NF-e Saída de Terceiros
-}
 
 NFM existem 91 campos
