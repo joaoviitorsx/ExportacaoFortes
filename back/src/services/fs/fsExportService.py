@@ -32,10 +32,6 @@ class FSExportService:
         pnm = ExportarPNM(self.session, empresa_id).gerar()
         return pnm
     
-    def exportarINM(self, empresa_id: int):
-        inm = ExportarINM(self.session).gerar(empresa_id)
-        return inm
-    
     def exportarNFM(self, empresa_id: int):
         nfm = ExportarNFM(self.session, empresa_id).gerar()
         return nfm
@@ -43,3 +39,7 @@ class FSExportService:
     def exportarSNM(self, empresa_id: int):
         snm = ExportarSNM(self.session, empresa_id).gerar()
         return snm
+    
+    def exportarINM(self, empresa_id: int):
+        inm = ExportarINM(self.session).gerar(empresa_id)
+        return inm
