@@ -1,10 +1,10 @@
-{
     Tipo registro,
     Valor,
     UF,
     CFOP,
     CFOP Transferencia,
     Base de Calculo ICMS,
+    Aliquota ICMS,
     Valor do ICMS,
     Isento do ICMS,
     Outras do ICMS,
@@ -32,6 +32,5 @@
     Alíquota do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
     Valor do FCP - Subst. Trib. ou Retido Ant. por Subst. Trib.,
     Aliquota do ICMS Deferido
-}
 
 Campos 34 INM

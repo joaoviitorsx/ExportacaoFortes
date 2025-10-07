@@ -42,7 +42,7 @@ def builderINM(dados: Dict[str, Any]) -> str:
     campos[3] = cfop                                     # 04 - CFOP
     campos[4] = ""                                       # 05 - CFOP Transferencia (vazio por padrão)
     campos[5] = formatarValor(base_icms)                 # 06 - Base de Calculo ICMS
-    campos[6] = formatarValor(aliq_icms)                 # 07 - Alíquota do ICMS (NOVO CAMPO NA LISTA)
+    campos[6] = formatarValor(aliq_icms)                 # 07 - Alíquota do ICMS
     campos[7] = formatarValor(valor_icms)                # 08 - Valor do ICMS
     campos[8] = formatarValor(isentas_icms)              # 09 - Isentas do ICMS
     campos[9] = formatarValor(outras_icms)               # 10 - Outras do ICMS
@@ -71,4 +71,4 @@ def builderINM(dados: Dict[str, Any]) -> str:
     campos[32] = ""                                      # 33 - Valor do FCP - Subst. Trib.
     campos[33] = ""                                      # 34 - Aliquota do ICMS Deferido
 
-    return "|".join(map(str, campos))
+    return "|".join(map(str, campos)) + "|"
