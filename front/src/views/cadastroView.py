@@ -33,7 +33,7 @@ def CadastroView(page: ft.Page) -> ft.View:
     cnpj_input.on_change = formataInput
 
     btn_salvar = ActionButton("Salvar", icon=ft.Icons.SAVE, color="primary", disabled=True)
-    btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color="secondary")
+    btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color=ft.Colors.BLUE_600)
 
     info_card = ft.Container(
         bgcolor=ft.Colors.GREY_50,
@@ -70,11 +70,18 @@ def CadastroView(page: ft.Page) -> ft.View:
                             weight=ft.FontWeight.BOLD,
                             size=16,
                         ),
-                        ft.Text(f"CNPJ: {empresa_dados.get('cnpj', '-')}"),
-                        ft.Text(f"UF: {empresa_dados.get('uf', '-')}"),
-                        ft.Text(
-                            f"Optante Simples: {'Sim' if empresa_dados.get('simples') else 'Não'}"
-                        ),
+                        ft.Row([
+                            ft.Text("CNPJ:", weight=ft.FontWeight.BOLD),
+                            ft.Text(f"{empresa_dados.get('cnpj', '-')}")
+                        ]),
+                        ft.Row([
+                            ft.Text(f"UF:", weight=ft.FontWeight.BOLD),
+                            ft.Text(f"{empresa_dados.get('uf', '-')}"),
+                        ]),
+                        ft.Row([
+                            ft.Text(f"Optante Simples:", weight=ft.FontWeight.BOLD),
+                            ft.Text(f"{'Sim' if empresa_dados.get('simples') else 'Não'}")
+                        ]),
                     ],
                     spacing=5,
                     horizontal_alignment=ft.CrossAxisAlignment.START,
