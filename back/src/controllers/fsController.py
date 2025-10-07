@@ -39,7 +39,6 @@ class FsController:
         return etapas
 
     def arquivoFs(self) -> str:
-        print("[DEBUG] Entrou em arquivoFs")
         gerador = GerarArquivo(self.empresa_id, self.output_path)
         file_path = gerador.gerar()
         print("Arquivo .fs gerado com sucesso!")
