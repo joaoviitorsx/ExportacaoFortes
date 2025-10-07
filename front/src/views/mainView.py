@@ -121,7 +121,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
     btnProcessar.on_click = processar
     btnDownload.on_click = escolherLocal
 
-    btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color=ft.Colors.BLUE_600)
+    btn_voltar = ActionButton("Voltar", color=ft.Colors.BLUE_600)
     btn_voltar.on_click = lambda e: page.go("/")
 
     return ft.View(
