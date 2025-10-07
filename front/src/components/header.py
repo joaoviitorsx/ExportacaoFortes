@@ -15,7 +15,7 @@ class Header(ft.Column):
         )
 
         self.title = ft.Text(
-            "Conversor SPED",
+            "Exportação Fortes",
             size=24,
             weight=ft.FontWeight.BOLD,
             color=ft.Colors.BLACK87,
