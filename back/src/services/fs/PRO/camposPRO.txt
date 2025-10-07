@@ -1,4 +1,3 @@
-{
     Tipo de Registro,
     Codigo,
     Descrição,
@@ -33,7 +32,7 @@
     Percentual de Incetivo,
     Prazo de Fruição,
     Indicador Especial de Incentivo, 
-    Percentual CSL,
+    Percentual CSL,*
     Percentual do IRPJ,
     Aliq. ICMS Interna,
     Codigos da Receita (Produto Especifico),
@@ -43,8 +42,10 @@
     Custo de aquisição,
     Substituição de ICMS,
     Substituição de IPI,
+    Substintuicao de COFINS,
     Substituição de PIS/PASEP, 
     Tributação Monofásica de COFINS,
+    Tributacao do PIS/COFINS,
     Apuração do PIS/COFINS,
     Cod. Rceita Retido COFINS,
     Cod. Receita Retido PIS,
@@ -52,6 +53,5 @@
     Cod. Receita Retido IRPJ,
     Cod. Receita Retido COSIRF,
     Decreto 20.686/99 (AM)
-}
 
 55 campos PRO
