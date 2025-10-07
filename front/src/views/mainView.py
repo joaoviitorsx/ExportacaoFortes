@@ -93,6 +93,11 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         if not processado_ok:
             notificacao(page, "Erro", "Você precisa processar antes de baixar.", tipo="erro")
             return
+        
+        uploaderCard.showProgress(False)
+        uploaderCard.showDownloadProgress(True)
+        notificacao(page, "Aguarde", "Escolha o local para salvar o arquivo .fs", tipo="info")
+        page.update()
 
         save_dialog = ft.FilePicker(on_result=salvarArquivo)
         page.overlay.append(save_dialog)
@@ -102,6 +107,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         )
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
+        uploaderCard.showDownloadProgress(False)
         if result.path:
             resposta = FsRoute.baixarFs(
                 empresa_id=id,
@@ -110,6 +116,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
             )
 
             if resposta["status"] == "ok":
+                uploaderCard.finishDownloadProgress()
                 notificacao(page, "Download pronto!", f"Arquivo salvo em {result.path}", tipo="sucesso")
             else:
                 notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
