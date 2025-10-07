@@ -1,3 +1,4 @@
+import os
 import flet as ft
 
 from ..components.card import Card
@@ -33,10 +34,22 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         btnProcessar.text = "Processar Arquivo"
         btnDownload.visible = False
         page.update()
-        notificacao(page, "Arquivo selecionado", ", ".join(filenames), tipo="info")
 
-    def resetarView():    
-        page.go(f"/main?empresa={id}&nome={nome_empresa.replace(' ', '%20')}")
+        nomes_arquivos = [os.path.basename(path) for path in filenames]
+        notificacao(page, "Arquivo selecionado", ", ".join(nomes_arquivos), tipo="info")
+
+    def resetarView():
+        nonlocal selected_files, processado_ok, uploaderCard
+        selected_files = []
+        processado_ok = False
+        btnProcessar.disabled = True
+        btnProcessar.text = "Processar Arquivo"
+        btnDownload.visible = False
+        
+        uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
+        main_column.controls[3] = uploaderCard
+        
+        page.update()
 
     def processar(e):
         nonlocal processado_ok
@@ -90,7 +103,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
         if result.path:
-            resposta = FsRoute.processarFs(
+            resposta = FsRoute.baixarFs(
                 empresa_id=id,
                 arquivos=selected_files,
                 output_path=result.path,
@@ -124,29 +137,29 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
     btn_voltar = ActionButton("Voltar", color=ft.Colors.BLUE_600)
     btn_voltar.on_click = lambda e: page.go("/")
 
+    main_column = ft.Column(
+        [
+            ft.Container(
+                content=ft.Row([btn_voltar], alignment=ft.MainAxisAlignment.START),
+                padding=ft.padding.only(bottom=10),
+            ),
+            Header(),
+            card_empresa,
+            uploaderCard,
+             ft.Row(
+                [btnProcessar, btnDownload],
+                spacing=20,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            Header.footer(),
+            ],
+            spacing=17,
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+        )
+    
     return ft.View(
         route=f"/main?empresa={id}",
-        controls=[
-            ft.Column(
-                [
-                    ft.Container(
-                        content=ft.Row([btn_voltar], alignment=ft.MainAxisAlignment.START),
-                        padding=ft.padding.only(bottom=10),
-                    ),
-                    Header(),
-                    card_empresa,
-                    uploaderCard,
-                    ft.Row(
-                        [btnProcessar, btnDownload],
-                        spacing=20,
-                        alignment=ft.MainAxisAlignment.CENTER,
-                    ),
-                    Header.footer(),
-                ],
-                spacing=17,
-                expand=True,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                scroll=ft.ScrollMode.AUTO,
-            )
-        ],
+        controls=[main_column],
     )
