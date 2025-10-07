@@ -109,7 +109,7 @@ def calcularProximaPosicao() -> int:
     
     return posicao
 
-def notificacaoContainer(page: ft.Page, titulo: str, mensagem: str, estilo: dict, duracao: int, posicao_bottom: int = 20) -> ft.Container:
+def notificacaoContainer(page: ft.Page, titulo: str, mensagem: str, estilo: dict, duracao: int, posicao_top: int = 20) -> ft.Container:
     altura_dinamica = calcularAltura(titulo, mensagem)
     notification_id = _notification_manager.get_next_id()
     
@@ -168,7 +168,7 @@ def notificacaoContainer(page: ft.Page, titulo: str, mensagem: str, estilo: dict
         width=400,
         height=altura_dinamica,
         right=20,
-        bottom=posicao_bottom,
+        top=posicao_top,
         opacity=0,
         offset=ft.Offset(0.3, 0),
         animate_opacity=ft.Animation(300, "easeOut"),
