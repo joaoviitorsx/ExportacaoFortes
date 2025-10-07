@@ -19,7 +19,7 @@ class FsController:
         session_icms = getSessionICMS()
         session_export = getSessionFS()
 
-        etapas.append({"percent": 12, "mensagem": "Atualizando fornecedores..."})
+        etapas.append({"percent": 16, "mensagem": "Atualizando fornecedores..."})
         repo = FornecedorRepository(session_export)
         fornecedor_service = FornecedorService(repo)
         fornecedor_service.processar(self.empresa_id)
@@ -39,6 +39,7 @@ class FsController:
         return etapas
 
     def arquivoFs(self) -> str:
+        print("[DEBUG] Entrou em arquivoFs")
         gerador = GerarArquivo(self.empresa_id, self.output_path)
         file_path = gerador.gerar()
         print("Arquivo .fs gerado com sucesso!")
