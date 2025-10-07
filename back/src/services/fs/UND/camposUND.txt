@@ -1,0 +1,3 @@
+    Tipo de Registro,
+    Unidade de medida,
+    Descrição
