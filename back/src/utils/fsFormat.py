@@ -32,11 +32,18 @@ def removerAcentos(s):
 def validacaoText(val, maxlen):
     return removerAcentos(str(val or '').replace('\n', ' ').replace('\r', ' ').strip())[:maxlen]
 
+from typing import Any
+
 def formatarValor(value: Any, precision: int = 2) -> str:
     if value is None or value == '':
         return ''
+    
     try:
-        return f'{float(value):.{precision}f}'.replace(',', '.')
+        numeric_value = float(value)
+        if numeric_value == 0.0:
+            return ''
+        return f'{numeric_value:.{precision}f}'.replace(',', '.')
+        
     except (ValueError, TypeError):
         return str(value)
 
@@ -71,12 +78,26 @@ def formatarData(value: Any) -> str:
 def tipoOperacao(ind_oper: str) -> str:
     return 'E' if ind_oper == '0' else 'S' if ind_oper == '1' else ''
 
+def documentoProprio(ind_emit: str) -> str:
+    return 'S' if ind_emit == '0' else 'N'
+
 #Mapeia o código do modelo do SPED para o layout Fortes.
 def modeloDoc(cod_mod: str) -> str:
-    modelos = {'55': 'NFE', '01': 'NF'}
+    modelos = {'01': 'NF1', '1B': 'NF1A', '04': 'NFP', '55': 'NFE'}
     return modelos.get(cod_mod, '')
 
 #Mapeia o código de situação do SPED para o layout Fortes.
 def situacaoDoc(cod_sit: str) -> str:
-    situacoes = {'00': 'N', '02': 'C', '03': 'E', '04': 'D', '05': 'I'}
-    return situacoes.get(cod_sit, 'N') # Padrão 'N' de Normal
+    situacoes = {'00': '0', '01': '8', '02': '1', '03': '1', '04': '4', '05': '5'}
+    return situacoes.get(cod_sit, '0')
+
+def tipoFrete(ind_frt: str) -> str:
+    fretes = {'0': 'R', '1': 'D', '9': 'N'}
+    return fretes.get(ind_frt, 'N')
+
+def tipoFatura(ind_pgto: str) -> str:
+    if ind_pgto == '0':
+        return 'V'  # A vista
+    if ind_pgto == '1':
+        return 'P'  # A prazo
+    return 'N'  # Não informado/Outros
