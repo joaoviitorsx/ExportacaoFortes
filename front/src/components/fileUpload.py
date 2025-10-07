@@ -87,6 +87,7 @@ class UploadCard(Card):
     def __init__(self, on_file_selected=None):
         self.on_file_selected = on_file_selected
         self.selected_files = []
+        self.selected_path = []
         self.files_card = None
 
         self.file_picker = ft.FilePicker(on_result=self.filesPicked)
@@ -117,11 +118,15 @@ class UploadCard(Card):
     def filesPicked(self, e: ft.FilePickerResultEvent):
         if e.files:
             self.selected_files = [f.name for f in e.files]
+            self.selected_paths = [f.path for f in e.files]
+            
             self.showFiles()
+            
             if self.on_file_selected:
-                self.on_file_selected(self.selected_files)
+                self.on_file_selected(self.selected_paths)
         else:
             self.selected_files = []
+            self.selected_paths = []
             self.showUpload()
 
     def showFiles(self):
