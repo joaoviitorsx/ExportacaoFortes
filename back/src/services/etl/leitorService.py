@@ -16,7 +16,6 @@ class LeitorService:
         self.fila = fila
         self.buffer_size = buffer_size
 
-        # services para cada tipo de registro
         self.s0000 = Registro0000Service(session, empresa_id)
         self.s0150 = Registro0150Service(session, empresa_id)
         self.s0200 = Registro0200Service(session, empresa_id)
