@@ -101,3 +101,24 @@ def tipoFatura(ind_pgto: str) -> str:
     if ind_pgto == '1':
         return 'P'  # A prazo
     return 'N'  # Não informado/Outros
+
+def normalizarDados(dados, nome_secao: str):
+        if not dados:
+            print(f"[WARNING] {nome_secao}: Nenhum dado retornado")
+            return []
+        
+        if isinstance(dados, str):
+            return [dados]
+        elif isinstance(dados, list):
+            return dados
+        elif isinstance(dados, dict):
+            linhas = []
+            for chave, valor in dados.items():
+                if isinstance(valor, list):
+                    linhas.extend(valor)
+                elif isinstance(valor, str):
+                    linhas.append(valor)
+            return linhas
+        else:
+            print(f"[WARNING] {nome_secao}: Tipo de dados não reconhecido: {type(dados)}")
+            return [str(dados)]
