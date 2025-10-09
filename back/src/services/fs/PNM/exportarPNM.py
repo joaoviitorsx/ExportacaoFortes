@@ -31,7 +31,10 @@ class ExportarPNM:
                 c170.quant_bc_cofins AS quant_bc_cofins, c170.cod_cta AS cod_cta, c170.cod_nat AS cod_nat
             FROM registro_c170 c170
             JOIN registro_c100 c100 ON c170.c100_id = c100.id
-            WHERE c170.empresa_id = :empresa_id AND c100.cod_mod IN ('01', '1B', '04', '55')
+            WHERE c170.empresa_id = :empresa_id 
+                AND c100.cod_mod IN ('01', '1B', '04', '55')
+                AND c170.ativo = 1
+                AND c100.ativo = 1
             ORDER BY c170.c100_id, c170.id
             """
         )
@@ -45,7 +48,7 @@ class ExportarPNM:
         
         resultados: Dict[int, Dict[str, Any]] = {}
         base = text(
-            "SELECT id AS c100_id, dt_doc, ind_emit, chv_nfe, vl_frt, vl_seg, vl_out_da FROM registro_c100 WHERE id IN :ids"
+            "SELECT id AS c100_id, dt_doc, ind_emit, chv_nfe, vl_frt, vl_seg, vl_out_da FROM registro_c100 WHERE id IN :ids AND ativo = 1"
         ).bindparams(bindparam("ids", expanding=True))
         for chunk in self.chunks(list(set(c100_ids)), self.chunk_size):
             rows = self.session.execute(base, {"ids": chunk}).mappings().all()
@@ -66,7 +69,7 @@ class ExportarPNM:
                 r.cest AS cod_cest,
                 p.aliquota AS aliquota_cadastro
             FROM produtos p
-            LEFT JOIN registro_0200 r ON p.codigo = r.cod_item AND p.empresa_id = r.empresa_id
+            LEFT JOIN registro_0200 r ON p.codigo = r.cod_item AND p.empresa_id = r.empresa_id AND r.ativo = 1
             WHERE p.empresa_id = :empresa_id AND p.codigo IN :cods
             """
         ).bindparams(bindparam("cods", expanding=True))
@@ -86,7 +89,7 @@ class ExportarPNM:
             return {}
         resultado: Dict[int, float] = {}
         base = text(
-            "SELECT c100_id, SUM(vl_item) AS soma_itens FROM registro_c170 WHERE c100_id IN :ids GROUP BY c100_id"
+            "SELECT c100_id, SUM(vl_item) AS soma_itens FROM registro_c170 WHERE c100_id IN :ids AND ativo = 1 GROUP BY c100_id"
         ).bindparams(bindparam("ids", expanding=True))
         for chunk in self.chunks(list(set(c100_ids)), self.chunk_size):
             rows = self.session.execute(base, {"ids": chunk}).mappings().all()

@@ -22,7 +22,7 @@ class Header(ft.Column):
         )
 
         self.subtitle = ft.Text(
-            "Sistema para processamento de arquivos SPED e geração de arquivos .fs",
+            "Sistema para processamento de arquivos SPED e geração de arquivos Fortes Fiscal",
             size=14,
             color=ft.Colors.GREY_600,
         )

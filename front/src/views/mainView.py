@@ -66,7 +66,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         btnProcessar.disabled = True
         uploaderCard.disableRefresh()
         uploaderCard.showProgress(True)
-        uploaderCard.updateProgress(5, "Iniciando processamento...")
+        uploaderCard.updateProgress(15, "Iniciando processamento...")
         page.update()
 
         async def executarProcessamento():
@@ -77,7 +77,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
                     arquivos=selected_files,
                     output_path=None,
                 )
-                await asyncio.sleep(0.5)  # Simula um pequeno atraso para melhor UX
+                await asyncio.sleep(0.5)
 
                 if resposta["status"] == "ok":
                     for etapa in resposta.get("etapas", []):
@@ -94,6 +94,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
                 else:
                     uploaderCard.updateProgress(0, "Erro no processamento")
                     notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+                    resetarView()
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Arquivo"
                     btnProcessar.icon = ft.Icons.PLAY_ARROW
@@ -101,6 +102,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
 
             except Exception as e:
                 notificacao(page, "Erro", f"Erro inesperado: {str(e)}", tipo="erro")
+                resetarView()
                 btnProcessar.disabled = False
                 btnProcessar.text = "Processar Arquivo"
                 btnProcessar.icon = ft.Icons.PLAY_ARROW

@@ -19,7 +19,7 @@ class FsController:
         session_icms = getSessionICMS()
         session_export = getSessionFS()
 
-        etapas.append({"percent": 16, "mensagem": "Atualizando fornecedores..."})
+        etapas.append({"percent": 32, "mensagem": "Atualizando fornecedores..."})
         repo = FornecedorRepository(session_export)
         fornecedor_service = FornecedorService(repo)
         fornecedor_service.processar(self.empresa_id)

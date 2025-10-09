@@ -101,9 +101,14 @@ def CadastroView(page: ft.Page) -> ft.View:
             return
 
         try:
-            EmpresaRoute.cadastrarEmpresa(empresa_dados)
-            notificacao(page, "Sucesso", "Empresa cadastrada com sucesso!", tipo="sucesso")
-            page.go("/")
+            resultado = EmpresaRoute.cadastrarEmpresa(empresa_dados)
+            if resultado and resultado.get("status") == "erro":
+                notificacao(page, "Info", resultado.get("mensagem", "Empresa já cadastrada."), tipo="info")
+            elif resultado and resultado.get("status") == "ok":
+                notificacao(page, "Sucesso", "Empresa cadastrada com sucesso!", tipo="sucesso")
+                page.go("/")
+            else:
+                notificacao(page, "Erro", "Erro ao cadastrar empresa.", tipo="erro")
         except Exception as ex:
             notificacao(page, "Erro", str(ex), tipo="erro")
 

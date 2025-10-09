@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 from ...utils.cnpj import processarCnpjs
 from ...repositories.fornecedoresRepo.fornecedorRepository import FornecedorRepository
 
@@ -25,7 +26,13 @@ class FornecedorService:
                 return
 
             print(f"Consultando API externa para {len(cnpjs)} CNPJs...")
-            resultados = asyncio.run(processarCnpjs(cnpjs))
+            try:
+                loop = asyncio.get_running_loop()
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, processarCnpjs(cnpjs))
+                    resultados = future.result()
+            except RuntimeError:
+                resultados = asyncio.run(processarCnpjs(cnpjs))
 
             print("Atualizando cadastro_fornecedores")
             for i in range(0, len(cnpjs), LOTE):

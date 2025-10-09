@@ -12,7 +12,8 @@ class ExportarPAR:
                        ende, num, compl, bairro,
                        cod_mun, suframa, cod_pais
                 FROM registro_0150
-                WHERE empresa_id = :empresa_id AND ativo = 1
+                WHERE empresa_id = :empresa_id 
+                  AND ativo = 1
             """),
             {"empresa_id": empresa_id}
         ).mappings().all()

@@ -10,6 +10,11 @@ from ...repositories.registrosRepo.registroC170Repository import RegistroC170Rep
 from ...repositories.registrosRepo.registroC190Repository import RegistroC190Repository
 
 class Persistencia(threading.Thread):
+    #compartilhado entre todas as threads
+    eventC100Finish = threading.Event()
+    mapa_documentos = {}
+    mapa_lock = threading.Lock()
+
     def __init__(self, fila: queue.PriorityQueue, session, empresa_id):
         super().__init__()
         self.fila = fila
@@ -24,7 +29,6 @@ class Persistencia(threading.Thread):
         self.repoC170 = RegistroC170Repository(session)
         self.repoC190 = RegistroC190Repository(session)
 
-        self.mapa_documentos = {}
         self.prioridades = {
             "0000": 1,
             "0150": 2,
@@ -67,60 +71,84 @@ class Persistencia(threading.Thread):
     def salvarRegistro0000(self, dados):
         print(f"[INFO] Salvando 0000 ({len(dados)})")
         self.repo0000.salvamento(dados)
+        self.session.commit()
+
+        Persistencia.eventC100Finish.clear()
+        with Persistencia.mapa_lock:
+            Persistencia.mapa_documentos.clear()
 
     def salvarRegistro0150(self, dados):
         print(f"[INFO] Salvando 0150 ({len(dados)})")
         self.repo0150.salvamento(dados)
+        self.session.commit()
 
     def salvarRegistro0200(self, dados):
         print(f"[INFO] Salvando 0200 ({len(dados)})")
         self.repo0200.salvamento(dados)
+        self.session.commit()
 
     def salvarRegistroC100(self, dados):
         print(f"[INFO] Salvando C100 ({len(dados)})")
         self.repoC100.salvamento(dados)
+        self.session.commit()
 
-        if dados:
-            periodo = dados[0].get("periodo")
-            empresa_id = dados[0].get("empresa_id")
+        if not dados:
+            return
 
-            rows = self.repoC100.buscarIDS(periodo, empresa_id)
-            for row in rows:  
+        periodo = dados[0].get("periodo")
+        empresa_id = dados[0].get("empresa_id")
+
+        rows = self.repoC100.buscarIDS(periodo, empresa_id)
+        with Persistencia.mapa_lock:
+            for row in rows:
                 num_doc = str(row["num_doc"]).zfill(9)
-                self.mapa_documentos[num_doc] = {
+                Persistencia.mapa_documentos[num_doc] = {
                     "id_c100": row["id"],
-                    "ind_oper": row["ind_oper"],
-                    "cod_part": row["cod_part"],
-                    "chv_nfe": row["chv_nfe"],
+                    "ind_oper": row.get("ind_oper"),
+                    "cod_part": row.get("cod_part"),
+                    "chv_nfe": row.get("chv_nfe"),
                     "periodo": periodo,
                     "empresa_id": empresa_id,
                 }
+            print(f"[INFO] Mapa de documentos atualizado ({len(Persistencia.mapa_documentos)} docs).")
+
+        Persistencia.eventC100Finish.set()
 
     def salvarRegistroC170(self, dados):
         print(f"[INFO] Salvando C170 ({len(dados)})")
-        for registro in dados:
-            num_doc = str(registro.get("num_doc", "")).zfill(9)
-            doc_info = self.mapa_documentos.get(num_doc)
+        Persistencia.eventC100Finish.wait()
 
-            if doc_info:
-                registro.setdefault("c100_id", doc_info.get("id_c100"))
-                registro.setdefault("periodo", doc_info.get("periodo"))
-                registro.setdefault("empresa_id", doc_info.get("empresa_id"))
+        with Persistencia.mapa_lock:
+            for registro in dados:
+                num_doc = str(registro.get("num_doc", "")).zfill(9)
+                doc_info = Persistencia.mapa_documentos.get(num_doc)
+                if doc_info:
+                    registro["c100_id"]   = doc_info["id_c100"]
+                    registro["periodo"]   = doc_info["periodo"]
+                    registro["empresa_id"]= doc_info["empresa_id"]
+                else:
+                    print(f"[WARN] C170 sem match: num_doc={num_doc} não encontrado no mapa_documentos.")
 
         self.repoC170.salvamento(dados)
+        self.session.commit()
 
     def salvarRegistroC190(self, dados):
         print(f"[INFO] Salvando C190 ({len(dados)})")
-        for registro in dados:
-            num_doc = str(registro.get("num_doc", "")).zfill(9)
-            doc_info = self.mapa_documentos.get(num_doc)
+        Persistencia.eventC100Finish.wait()
 
-            if doc_info:
-                registro.setdefault("c100_id", doc_info.get("id_c100"))
-                registro.setdefault("ind_oper", doc_info.get("ind_oper"))
-                registro.setdefault("cod_part", doc_info.get("cod_part"))
-                registro.setdefault("chv_nfe", doc_info.get("chv_nfe"))
-                registro.setdefault("periodo", doc_info.get("periodo"))
-                registro.setdefault("empresa_id", doc_info.get("empresa_id"))
+        with Persistencia.mapa_lock:
+            for registro in dados:
+                num_doc = str(registro.get("num_doc", "")).zfill(9)
+                doc_info = Persistencia.mapa_documentos.get(num_doc)
+                if doc_info:
+                    registro["c100_id"] = doc_info["id_c100"]
+                    registro["ind_oper"] = doc_info.get("ind_oper")
+                    registro["cod_part"] = doc_info.get("cod_part")
+                    registro["chv_nfe"] = doc_info.get("chv_nfe")
+                    registro["periodo"] = doc_info["periodo"]
+                    registro["empresa_id"] = doc_info["empresa_id"]
+                else:
+                    print(f"[WARN] C190 sem match: num_doc={num_doc} não encontrado no mapa_documentos.")
 
         self.repoC190.salvamento(dados)
+        self.session.commit()

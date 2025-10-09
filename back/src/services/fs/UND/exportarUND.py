@@ -9,7 +9,10 @@ class ExportarUND:
         query = text("""
             SELECT DISTINCT unid_inv
             FROM registro_0200
-            WHERE empresa_id = :empresa_id AND unid_inv IS NOT NULL AND unid_inv != ''
+            WHERE empresa_id = :empresa_id
+              AND unid_inv IS NOT NULL
+              AND unid_inv != ''
+              AND ativo = 1
         """)
         
         resultado = self.session.execute(query, {"empresa_id": empresa_id}).mappings().all()

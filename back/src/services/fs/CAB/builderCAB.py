@@ -5,7 +5,7 @@ from ....utils.fsFormat import formatarData
 def builderCAB(empresa: Dict[str, Any], registro_0000: Dict[str, Any]) -> str:
     tipo_registro = "CAB"
     versao_leiaute = "172"
-    software = "AssertivusFiscal"[:62]
+    software = "AssertivusContabil"[:62]
     data_geracao = datetime.now().strftime("%Y%m%d")
     nome_empresa = str(empresa.get("razao_social", ''))[:15]
     data_inicial = formatarData(registro_0000.get("dt_ini")) 

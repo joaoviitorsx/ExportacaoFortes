@@ -21,7 +21,10 @@ class ExportarSNM:
             LEFT JOIN registro_c170 AS c170 ON c170.c100_id = c100.id
             LEFT JOIN produtos AS p ON p.codigo = c170.cod_item AND p.empresa_id = c170.empresa_id
             WHERE
-                c190.empresa_id = :empresa_id;
+                c190.empresa_id = :empresa_id
+                AND c190.ativo = 1
+                AND c100.ativo = 1
+                AND (c170.ativo = 1 OR c170.ativo IS NULL)
             """
         )
         result = self.session.execute(query, {"empresa_id": self.empresa_id})

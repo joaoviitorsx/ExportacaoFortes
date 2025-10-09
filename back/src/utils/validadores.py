@@ -1,3 +1,4 @@
+import os
 import re
 
 def removedorCaracteres(valor: str) -> str:
@@ -36,3 +37,37 @@ def formatarValor(value):
             return parts[0] + ',' + parts[1][:2]
         return cleaned
 
+def validarSpedFiscal(arquivo: str) -> bool:
+        if not os.path.exists(arquivo):
+            raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
+
+        if not arquivo.lower().endswith(".txt"):
+            raise ValueError("Arquivo inválido: apenas arquivos .txt são aceitos.")
+
+        encodings = ["latin-1", "utf-8", "utf-16", "cp1252"]
+        linhas = None
+        for enc in encodings:
+            try:
+                with open(arquivo, "r", encoding=enc) as f:
+                    linhas = [l.strip() for _, l in zip(range(5000), f) if l.strip()]
+                    break
+            except (UnicodeDecodeError, StopIteration):
+                continue
+            except Exception as e:
+                raise ValueError(f"Erro ao abrir o arquivo: {e}")
+
+        if not linhas:
+            raise ValueError("Arquivo inválido: não foi possível ler o conteúdo (arquivo corrompido ou codificação incorreta).")
+
+        registros = ["|0000|", "|0150|", "|0200|", "|C100|", "|C170|", "|C190|"]
+
+        faltantes = [r for r in registros if not any(l.startswith(r) for l in linhas)]
+
+        if faltantes:
+            faltantes_fmt = ", ".join(r.replace("|", "") for r in faltantes)
+            raise ValueError(
+                f"Arquivo inválido: faltam os registros obrigatórios {faltantes_fmt}. "
+                "Verifique se o arquivo é realmente um SPED Fiscal EFD ICMS/IPI."
+            )
+
+        return True

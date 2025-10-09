@@ -8,6 +8,8 @@ from ....src.services.etl.registros.registroC100 import RegistroC100Service
 from ....src.services.etl.registros.registroC170 import RegistroC170Service
 from ....src.services.etl.registros.registroC190 import RegistroC190Service
 
+from ....src.utils.validadores import validarSpedFiscal
+
 class LeitorService:
     def __init__(self, session, empresa_id, arquivos: list[str], fila: queue.Queue, buffer_size=10000):
         self.session = session
@@ -36,6 +38,12 @@ class LeitorService:
             print(f"[ERRO] Arquivo não encontrado: {caminho}")
             return
 
+        try:
+            validarSpedFiscal(arquivo)
+        except ValueError as e:
+            print(f"[ERRO] Arquivo inválido: {e}")
+            return
+        
         print(f"[INFO] Iniciando leitura do arquivo: {os.path.basename(caminho)}")
         c100Atual = None
 

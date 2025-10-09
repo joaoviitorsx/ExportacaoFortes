@@ -16,7 +16,7 @@ class EmpresaRepository:
         if exists:
             return {
                 "status": "erro", 
-                "mensagem": "CNPJ já cadastrado"
+                "mensagem": "Empresa já cadastrada."
             }
 
         sql = text("""
@@ -29,6 +29,9 @@ class EmpresaRepository:
             "uf": uf,
             "simples": simples,
         })
+
         self.session.commit()
-        return {"status": "ok"}
+        return {
+            "status": "ok"
+        }
 

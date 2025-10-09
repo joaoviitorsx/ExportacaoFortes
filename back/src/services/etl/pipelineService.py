@@ -1,8 +1,9 @@
-import threading
 import queue
+import threading
 
 from ....src.services.etl.leitorService import LeitorService
 from ....src.services.etl.persistenciaService import Persistencia
+from ....src.services.etl.softDeleteService import SoftDeleteService
 
 from ....src.config.db.conexaoFS import getSessionFS
 
@@ -20,6 +21,9 @@ class PipelineService:
 
     def executar(self):
         print(f"[INFO] Iniciando pipeline para {len(self.arquivos)} arquivo(s).")
+        
+        periodo = SoftDeleteService.extrairPeriodo(self.arquivos)
+        SoftDeleteService.softDelete(self.session, self.empresa_id, periodo)
 
         #criar workers de persistência
         for _ in range(self.num_workers):

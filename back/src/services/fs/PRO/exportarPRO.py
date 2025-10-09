@@ -12,6 +12,7 @@ class ExportarPRO:
                 cod_ncm, cod_gen, cest
             FROM registro_0200
             WHERE empresa_id = :empresa_id
+                AND ativo = 1
         """)
         
         produtos = self.session.execute(query, {"empresa_id": empresa_id}).mappings().all()
