@@ -229,6 +229,16 @@ CREATE TABLE IF NOT EXISTS fornecedores (
     INDEX idx_empresa (empresa_id)
 );
 
+CREATE TABLE log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id BIGINT NOT NULL,
+    razao_social VARCHAR(255) NOT NULL,
+    acao VARCHAR(255) NOT NULL,
+    status ENUM('OK', 'ERRO', 'PENDENTE') DEFAULT 'OK',
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_log_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+);
+
 
 SELECT id, num_doc 
 FROM c100

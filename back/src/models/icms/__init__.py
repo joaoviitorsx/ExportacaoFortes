@@ -1,7 +1,7 @@
 from .cadastroTributacaoModel import CadastroTributacao
-from .empresaICMSModel import Empresa
+from .empresaICMSModel import EmpresaICMS
 
 __all__ = [
     "CadastroTributacao",
-    "Empresa",
+    "EmpresaICMS",
 ]

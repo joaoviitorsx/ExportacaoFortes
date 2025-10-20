@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from config.db.base import Base
+from ...config.db.base import Base
 
 class EmpresaICMS(Base):
     __tablename__ = "empresas"
