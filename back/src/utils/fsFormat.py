@@ -19,6 +19,70 @@ UNIDADES = {
     "GL": "GALÃO",
     "FR": "FRASCO",
     "ML": "MILILITRO",
+    "B1": "BANDEJA",
+    "BAN": "BAN",
+    "BD": "BD",
+    "BDJ": "BANDEJA",
+    "BJ": "BJ",
+    "CA": "CARTELA",
+    "CD": "UNIDADE",
+    "CE": "CE",
+    "CJ": "CONJUNTO",
+    "CL": "CARTELA",
+    "CP": "CP",
+    "CR": "",
+    "CRT": "CARTELA",
+    "CT": "CARTELA",
+    "CTC": "CARTUCHO",
+    "CXA": "CAIXA",
+    "CXT": "CAIXA",
+    "DI": "DISPLAY",
+    "DP": "DISPLAY",
+    "DUZ": "DUZIA",
+    "DZ": "DZ",
+    "EE": "",
+    "EM": "EMBALAGEM",
+    "EQ": "",
+    "EV": "ENVELOPE",
+    "EXB": "EXB",
+    "FAR": "FARDO",
+    "FC": "FC",
+    "FD": "FD",
+    "FDO": "FARDO",
+    "FR": "FR",
+    "GA": "GARRAFA",
+    "GF": "GARRAFA",
+    "GL": "GALAO",
+    "JG": "JG",
+    "KI": "KIT",
+    "LA": "LA",
+    "LI": "LITRO",
+    "LT": "LT",
+    "LTA": "LATA",
+    "MC": "MC",
+    "MI": "MILHEIRO",
+    "MIL": "MILHEIRO",
+    "ML": "MILILITRO",
+    "MT": "MT",
+    "PA": "",
+    "PAC": "PAC",
+    "PAR": "PAR",
+    "PC": "PC",
+    "PCT": "PCT",
+    "PO": "UNIDADE",
+    "PR": "PAR",
+    "PRD": "UNIDADE PADRAO",
+    "PT": "PT",
+    "RL": "ROLO",
+    "SA": "UNIDADE",
+    "SAC": "SACA",
+    "SC": "UNIDADE",
+    "SH": "UNIDADE",
+    "TB": "CAIXA",
+    "TP": "TIRA",
+    "UD": "",
+    "UNI": "UNIDADE",
+    "VD": "VIDRO",
 }
 
 def digitos(s):
@@ -122,3 +186,17 @@ def normalizarDados(dados, nome_secao: str):
         else:
             print(f"[WARNING] {nome_secao}: Tipo de dados não reconhecido: {type(dados)}")
             return [str(dados)]
+        
+def adicionarLinhas(destino: list, origem):
+    if not origem:
+        return
+
+    if isinstance(origem, dict):
+        for valor in origem.values():
+            adicionarLinhas(destino, valor)
+
+    elif isinstance(origem, list):
+        destino.extend(origem)
+    
+    elif isinstance(origem, str):
+        destino.append(origem)
