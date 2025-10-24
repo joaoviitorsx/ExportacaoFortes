@@ -5,3 +5,4 @@ python-dotenv
 aiohttp
 flet
 cryptography
+chardet
