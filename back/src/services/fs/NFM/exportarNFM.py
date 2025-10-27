@@ -1,3 +1,4 @@
+import time
 from sqlalchemy import text
 from typing import Dict, Any, List
 from .builderNFM import builderNFM
@@ -53,28 +54,56 @@ class ExportarNFM:
         return list(result.mappings().all())
 
     def gerar(self) -> List[str]:
+        t_start = time.time()
+        
+        print("[DEBUG NFM] Buscando documentos NFM...")
+        t0 = time.time()
         documentos = self.getNFM()
+        print(f"[DEBUG NFM] {len(documentos)} documentos encontrados em {time.time() - t0:.4f}s")
+        
         if not documentos:
             return []
 
+        c100_ids = [doc["c100_id"] for doc in documentos]
+        print(f"[DEBUG NFM] Total de c100_ids: {len(c100_ids)}")
+
+        # PNM
+        print("[DEBUG NFM] Gerando PNM...")
+        t0 = time.time()
+        pnm_map = self.exportar_pnm.gerar(c100_ids)
+        print(f"[DEBUG NFM] PNM gerado em {time.time() - t0:.4f}s ({len(pnm_map)} notas)")
+
+        # INM
+        print("[DEBUG NFM] Gerando INM...")
+        t0 = time.time()
+        inm_map = self.exportar_inm.gerar(c100_ids)
+        print(f"[DEBUG NFM] INM gerado em {time.time() - t0:.4f}s ({len(inm_map)} notas)")
+
+        # SNM
+        print("[DEBUG NFM] Gerando SNM...")
+        t0 = time.time()
+        snm_map = self.exportar_snm.gerar(c100_ids)
+        print(f"[DEBUG NFM] SNM gerado em {time.time() - t0:.4f}s ({len(snm_map)} notas)")
+
+        # Montagem final
+        print("[DEBUG NFM] Montando linhas finais...")
+        t0 = time.time()
         linhas_nfm: List[str] = []
 
         for dados_doc in documentos:
             c100_id = dados_doc["c100_id"]
-
+            
             linha_nfm = builderNFM(dados_doc)
             linhas_nfm.append(linha_nfm)
 
-            linhas_pnm = self.exportar_pnm.gerar_por_nota(c100_id)
-            if linhas_pnm:
-                linhas_nfm.extend(linhas_pnm)
+            if pnm_map.get(c100_id):
+                linhas_nfm.extend(pnm_map[c100_id])
+            if inm_map.get(c100_id):
+                linhas_nfm.extend(inm_map[c100_id])
+            if snm_map.get(c100_id):
+                linhas_nfm.extend(snm_map[c100_id])
 
-            linhas_inm = self.exportar_inm.gerar_por_nota(c100_id)
-            if linhas_inm:
-                linhas_nfm.extend(linhas_inm)
-
-            linhas_snm = self.exportar_snm.gerar_por_nota(c100_id)
-            if linhas_snm:
-                linhas_nfm.extend(linhas_snm)
-
+        print(f"[DEBUG NFM] Montagem finalizada em {time.time() - t0:.4f}s")
+        print(f"[DEBUG NFM] Total geral: {time.time() - t_start:.4f}s")
+        
         return linhas_nfm
