@@ -40,7 +40,7 @@ class ExportarNFM:
             WHERE
                 c.empresa_id = :empresa_id
                 AND c.ativo = 1
-                AND c.cod_mod IN ('01', '1B', '04', '55')
+                -- AND c.cod_mod IN ('01', '1B', '04', '55')
             GROUP BY
                 c.id, c.ind_oper, c.ind_emit, c.cod_part, c.cod_mod, c.cod_sit, c.ser,
                 c.num_doc, c.chv_nfe, c.dt_doc, c.dt_e_s, c.vl_doc, c.ind_pgto,
@@ -92,6 +92,9 @@ class ExportarNFM:
 
         for dados_doc in documentos:
             c100_id = dados_doc["c100_id"]
+
+            if c100_id not in pnm_map:
+                continue
             
             linha_nfm = builderNFM(dados_doc)
             linhas_nfm.append(linha_nfm)

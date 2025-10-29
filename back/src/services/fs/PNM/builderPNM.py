@@ -15,13 +15,62 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     tipo_calc_cofins = "2" if float(dados.get("aliq_cofins_reais", 0) or 0) > 0 else "1"
     tipo_calc_pis = "2" if float(dados.get("aliq_pis_reais", 0) or 0) > 0 else "1"
 
-    valor_total_item = (
+    valorTotal = (
         (float(dados.get("vl_item", 0) or 0)) +
         (float(dados.get("frete_rateado", 0) or 0)) +
         (float(dados.get("seguro_rateado", 0) or 0)) +
         (float(dados.get("outras_desp_rateado", 0) or 0)) -
         (float(dados.get("vl_desc", 0) or 0))
     )
+    
+    cst_confins = str(dados.get("vl_bc_cofins") or "").strip()
+    cst_confins_final = cst_confins if cst_confins else formatarValor(dados.get("vl_item"))
+
+    cst_pis = str(dados.get("vl_bc_pis") or "").strip()
+    cst_pis_final = cst_pis if cst_pis else formatarValor(dados.get("vl_item"))
+
+
+    aliquotaProduto = str(dados.get("aliquota_cadastro") or "").strip().upper()
+    stOrIsento = aliquotaProduto in ("ST", "ISENTO")
+
+    fornecedorSimples = str(dados.get("fornecedor_simples")).lower() == "true"
+    fornecedorDecreto = str(dados.get("fornecedor_decreto")).lower() == "true"
+    campo_16 = campo_17 = campo_18 = campo_19 = campo_20 = campo_21 = ""
+
+    if not stOrIsento:
+        if fornecedorDecreto:
+            pass
+
+        elif fornecedorSimples and not fornecedorDecreto:
+            campo_16 = "1"
+            campo_17 = "1"
+            campo_18 = formatarValor(valorTotal)
+            campo_19 = ""
+            campo_20 = formatarValor(valorTotal)
+
+            valorAliquota = str(aliquotaProduto).strip()
+            if valorAliquota and valorAliquota not in ["", "None", "null"]:
+                try:
+                    aliquota = float(str(aliquotaProduto).replace('%', '').replace(',', '.'))
+                    aliquotaFinal = aliquota + 3.0
+                    campo_21 = formatarValor(aliquotaFinal)
+                except (ValueError, AttributeError) as e:
+                    campo_21 = ""
+            else:
+                campo_21 = ""   
+
+        elif not fornecedorSimples and not fornecedorDecreto:
+            campo_16 = "1"
+            campo_17 = "1"
+            campo_18 = formatarValor(valorTotal)
+            campo_19 = ""
+            campo_20 = formatarValor(valorTotal)
+
+            try:
+                aliquota = float(str(aliquotaProduto).replace('%', '').replace(',', '.'))
+                campo_21 = formatarValor(aliquota)
+            except (ValueError, AttributeError) as e:
+                campo_21 = ""
 
     campos = [
         "PNM",                                               # 1. Tipo de registro
@@ -31,22 +80,22 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         csta_final,                                          # 5. CSTA
         cstb_final,                                          # 6. CSTB
         str(dados.get("unid", ''))[:6],                      # 7. Unidade de Medida
-        formatarValor(dados.get("qtd"), 4),                  # 8. Quantidade
+        formatarValor(dados.get("qtd"))[:5],                 # 8. Quantidade
         formatarValor(dados.get("vl_item")),                 # 9. Valor Bruto
         "",                                                  # 10. Valor do IPI (não contribuinte)
-        tributacaoICMS(cstb_final, dados.get("aliquota_cadastro")), # 11. Tributação ICMS (CHAMADA DA FUNÇÃO)
+        tributacaoICMS(cstb_final, dados.get("aliquota_cadastro")), # 11. Tributação ICMS
         formatarValor(dados.get("vl_bc_icms")),              # 12. Base de Calculo do ICMS
         formatarValor(dados.get("aliq_icms")),               # 13. Aliquota do ICMS
         formatarValor(dados.get("vl_bc_icms_st")),           # 14. Base Calc. Subst. Tributaria
         formatarValor(dados.get("vl_icms_st")),              # 15. ICMS Substituição
-        "",                                                  # 16. Tipo de Recolhimento
-        "",                                                  # 17. Tipo de Substituição
-        "",                                                  # 18. Custo Aquisição Subst. Trib.
-        "",                                                  # 19. Perc. Agreg. Substituição
-        "",                                                  # 20. Base de Calc. Subst. Trib (a recolher)
-        formatarValor(dados.get("aliq_st")),                 # 21. Aliquota Subst. Tributaria
+        campo_16,                                            # 16. Tipo de Recolhimento
+        campo_17,                                            # 17. Tipo de Substituição
+        campo_18,                                            # 18. Custo Aquisição Subst. Trib.
+        campo_19,                                            # 19. Perc. Agreg. Substituição
+        campo_20,                                            # 20. Base de Calc. Subst. Trib (a recolher)
+        campo_21,                                            # 21. Aliquota Subst. Tributaria
         "",                                                  # 22. Credito de Origem (ST)
-        "",                                                  # 23. Subst. já Recolhido
+        "N",                                                 # 23. Subst. já Recolhido
         "",                                                  # 24. Custo de Aquisição Antecip.
         "",                                                  # 25. Perc. Agregação Antecipado
         "",                                                  # 26. Aliquota interna (Antec.)
@@ -59,15 +108,15 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         formatarValor(dados.get("vl_bc_ipi")),               # 33. Base de calc. do IPI
         formatarValor(dados.get("aliq_ipi")),                # 34. Aliquota do IPI
         formatarValor(dados.get("vl_ipi")),                  # 35. Valor do IPI (contribuinte)
-        str(dados.get("cst_ipi", ''))[:2],                   # 36. CST IPI
-        str(dados.get("cst_cofins", ''))[:2],                # 37. CST COFINS
-        str(dados.get("cst_pis", ''))[:2],                   # 38. CST PIS
-        formatarValor(dados.get("vl_bc_cofins")),            # 39. Base de calculo COFINS
-        formatarValor(dados.get("vl_bc_pis")),               # 40. Base de calculo PIS
+        str(dados.get("cst_ipi", '')),                       # 36. CST IPI
+        str(dados.get("cst_cofins", '')),                    # 37. CST COFINS
+        str(dados.get("cst_pis", '')),                       # 38. CST PIS
+        cst_confins_final,                                   # 39. Base de calculo COFINS
+        cst_pis_final,                     # 40. Base de calculo PIS
         formatarValor(dados.get("frete_rateado")),           # 41. Valor Frete
         formatarValor(dados.get("seguro_rateado")),          # 42. Valor Seguro
         formatarValor(dados.get("vl_desc")),                 # 43. Valor Desconto
-        formatarValor(valor_total_item),                     # 44. Valor total
+        formatarValor(valorTotal),                           # 44. Valor total
         str(dados.get("cod_nat", ''))[:3],                   # 45. Natureza da receita COFINS
         str(dados.get("cod_nat", ''))[:3],                   # 46. Natureza da receita PIS
         "",                                                  # 47. Indicador Especial (PRODEPE)

@@ -27,16 +27,20 @@ class ExportarPNM:
                 c170.aliq_pis_reais AS aliq_pis_reais, c170.vl_pis AS vl_pis, c170.quant_bc_pis AS quant_bc_pis,
                 c170.cst_cofins AS cst_cofins, c170.vl_bc_cofins AS vl_bc_cofins, c170.aliq_cofins AS aliq_cofins,
                 c170.aliq_cofins_reais AS aliq_cofins_reais, c170.vl_cofins AS vl_cofins,
-                c170.quant_bc_cofins AS quant_bc_cofins, c170.cod_cta AS cod_cta, c170.cod_nat AS cod_nat
+                c170.quant_bc_cofins AS quant_bc_cofins, c170.cod_cta AS cod_cta, c170.cod_nat AS cod_nat, 
+                c100.cod_part AS fornecedor_cod_part,
+                f.simples AS fornecedor_simples,
+                f.decreto AS fornecedor_decreto
             FROM registro_c170 c170
-            JOIN registro_c100 c100 ON c170.c100_id = c100.id
+            JOIN registro_c100 c100 
+                ON c170.c100_id = c100.id
             JOIN fornecedores f 
                 ON f.cod_part = c100.cod_part
                 AND f.empresa_id = c170.empresa_id
             WHERE c170.empresa_id = :empresa_id
                 AND c170.ativo = 1
                 AND c100.ativo = 1
-                AND c100.cod_mod IN ('01', '1B', '04', '55')
+                -- AND c100.cod_mod IN ('01', '1B', '04', '55')
                 AND c170.cfop IN ( '1101', '1401', '1102', '1403', '1910', '1116', '2101', '2102', '2401', '2403', '2910', '2116')
                 AND ( (f.uf = 'CE' AND f.decreto = 0)OR f.uf != 'CE')
         """
