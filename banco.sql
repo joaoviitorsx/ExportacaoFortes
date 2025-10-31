@@ -6,14 +6,11 @@ CREATE TABLE IF NOT EXISTS empresas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cnpj CHAR(14) NOT NULL,
     razao_social VARCHAR(100) NOT NULL,
-	uf varchar(2) not null,
-    simples boolean,
-    aliq_espec boolean default false,
+    uf VARCHAR(2) NOT NULL,
+    simples BOOLEAN,
+    aliq_espec BOOLEAN DEFAULT FALSE,
     UNIQUE KEY unq_cnpj (cnpj)
 );
-
-alter table empresas add column aliq_espec boolean default false;
-select * from empresas;
 
 -- Registro 0000
 CREATE TABLE IF NOT EXISTS registro_0000 (
@@ -55,7 +52,7 @@ CREATE TABLE IF NOT EXISTS registro_0150 (
     suframa VARCHAR(20),
     ende VARCHAR(100),
     num VARCHAR(20),
-    compl VARCHAR(20),
+    compl VARCHAR(60),
     bairro VARCHAR(50),
     uf CHAR(2),
     tipo_pessoa CHAR(1),
@@ -100,6 +97,7 @@ CREATE TABLE IF NOT EXISTS registro_c100 (
     ser VARCHAR(10),
     num_doc VARCHAR(20),
     chv_nfe VARCHAR(60),
+    doc_key VARCHAR(120),
     dt_doc DATE,
     dt_e_s DATE,
     vl_doc DECIMAL(15,2),
@@ -122,7 +120,8 @@ CREATE TABLE IF NOT EXISTS registro_c100 (
     vl_cofins_st DECIMAL(15,2),
     filial VARCHAR(10),
     ativo BOOLEAN DEFAULT TRUE,
-    INDEX idx_empresa (empresa_id)
+    INDEX idx_empresa (empresa_id),
+    UNIQUE INDEX idx_doc_key_empresa (empresa_id, doc_key)
 );
 
 -- Registro C170
@@ -178,8 +177,12 @@ CREATE TABLE IF NOT EXISTS registro_c170 (
     mercado VARCHAR(15) DEFAULT '',
     aliquota VARCHAR(10) DEFAULT '',
     resultado VARCHAR(20),
+    doc_key VARCHAR(120),
     ativo BOOLEAN DEFAULT TRUE,
-    INDEX idx_empresa (empresa_id)
+    INDEX idx_empresa (empresa_id),
+    INDEX idx_doc_key_c170 (empresa_id, doc_key),
+    CONSTRAINT fk_c170_c100 FOREIGN KEY (c100_id) REFERENCES registro_c100(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Registro C190
@@ -200,9 +203,13 @@ CREATE TABLE IF NOT EXISTS registro_c190 (
     vl_red_bc DECIMAL(15,2),
     vl_ipi DECIMAL(15,2),
     cod_obs VARCHAR(10),
+    doc_key VARCHAR(120),
     ativo BOOLEAN DEFAULT TRUE,
     INDEX idx_empresa (empresa_id),
-    INDEX idx_c100 (c100_id)
+    INDEX idx_c100 (c100_id),
+    INDEX idx_doc_key_c190 (empresa_id, doc_key),
+    CONSTRAINT fk_c190_c100 FOREIGN KEY (c100_id) REFERENCES registro_c100(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS produtos (
@@ -229,7 +236,7 @@ CREATE TABLE IF NOT EXISTS fornecedores (
     INDEX idx_empresa (empresa_id)
 );
 
-CREATE TABLE log (
+CREATE TABLE IF NOT EXISTS log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     empresa_id BIGINT NOT NULL,
     razao_social VARCHAR(255) NOT NULL,
@@ -238,7 +245,6 @@ CREATE TABLE log (
     date DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_log_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 );
-
 
 SELECT id, num_doc 
 FROM c100
