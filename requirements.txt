@@ -6,3 +6,4 @@ aiohttp
 flet
 cryptography
 chardet
+nest_asyncio
