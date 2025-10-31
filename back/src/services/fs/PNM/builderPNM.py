@@ -37,11 +37,8 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     fornecedorDecreto = str(dados.get("fornecedor_decreto")).lower() == "true"
     campo_16 = campo_17 = campo_18 = campo_19 = campo_20 = campo_21 = ""
 
-    if not stOrIsento:
-        if fornecedorDecreto:
-            pass
-
-        elif fornecedorSimples and not fornecedorDecreto:
+    if not stOrIsento and not fornecedorDecreto:
+        if fornecedorSimples:
             campo_16 = "1"
             campo_17 = "1"
             campo_18 = formatarValor(valorTotal)
@@ -59,7 +56,7 @@ def builderPNM(dados: Dict[str, Any]) -> str:
             else:
                 campo_21 = ""   
 
-        elif not fornecedorSimples and not fornecedorDecreto:
+        elif not fornecedorSimples:
             campo_16 = "1"
             campo_17 = "1"
             campo_18 = formatarValor(valorTotal)
@@ -112,7 +109,7 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         str(dados.get("cst_cofins", '')),                    # 37. CST COFINS
         str(dados.get("cst_pis", '')),                       # 38. CST PIS
         cst_confins_final,                                   # 39. Base de calculo COFINS
-        cst_pis_final,                     # 40. Base de calculo PIS
+        cst_pis_final,                                       # 40. Base de calculo PIS
         formatarValor(dados.get("frete_rateado")),           # 41. Valor Frete
         formatarValor(dados.get("seguro_rateado")),          # 42. Valor Seguro
         formatarValor(dados.get("vl_desc")),                 # 43. Valor Desconto

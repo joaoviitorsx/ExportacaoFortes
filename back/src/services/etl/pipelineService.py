@@ -1,115 +1,122 @@
-import queue
-import threading
-import multiprocessing
-from concurrent.futures import ThreadPoolExecutor
 import time
-
+from typing import List
 from ....src.services.etl.leitorService import LeitorService
-from ....src.services.etl.persistenciaService import Persistencia
+from ....src.services.etl.persistenciaService import PersistenciaService
 from ....src.services.etl.softDeleteService import SoftDeleteService
-from ....src.config.db.conexaoFS import getSessionFS
+
 
 class PipelineService:
-    def __init__(self, session, empresa_id, arquivos: list[str], num_workers=None, buffer_size=50000):
+    """
+    Pipeline LINEAR para processamento de arquivos SPED Fiscal.
+    Processa um arquivo por vez, garantindo consistência.
+    """
+
+    def __init__(self, session, empresa_id: int, arquivos: List[str]):
         self.session = session
         self.empresa_id = empresa_id
         self.arquivos = arquivos
         
-        # Otimização: ajustar workers baseado em CPU/IO
-        if num_workers is None:
-            # CPU cores * 2 é bom para operações IO-bound
-            num_workers = min(multiprocessing.cpu_count() * 2, len(arquivos) * 2)
+        self.leitor = LeitorService(session, empresa_id)
+        self.persistencia = PersistenciaService(session)
         
-        self.num_workers = max(2, num_workers)  # Mínimo de 2 workers
-        self.buffer_size = buffer_size  # Aumentado para 50k
-
-        # Usar Queue com limite para evitar consumir muita memória
-        self.fila = queue.PriorityQueue(maxsize=buffer_size * 2)
-        self.threads_leitura = []
-        self.threads_workers = []
-        
-        # Controle de estatísticas
-        self.stats = {
-            'registros_processados': 0,
-            'tempo_inicio': None,
-            'tempo_fim': None
+        self.stats_global = {
+            "tempo_inicio": None,
+            "tempo_fim": None,
+            "arquivos_processados": 0,
+            "c100_total": 0,
+            "c170_total": 0,
+            "c190_total": 0,
+            "notas_ignoradas_total": 0,
+            "erros": []
         }
 
     def executar(self):
-        self.stats['tempo_inicio'] = time.time()
-        print(f"[INFO] Iniciando pipeline otimizado:")
-        print(f"  - Arquivos: {len(self.arquivos)}")
-        print(f"  - Workers: {self.num_workers}")
-        print(f"  - Buffer size: {self.buffer_size}")
-        
-        periodo = SoftDeleteService.extrairPeriodo(self.arquivos)
-        SoftDeleteService.softDelete(self.session, self.empresa_id, periodo)
+        """Executa o pipeline completo"""
+        print(f"\n{'='*80}")
+        print(f"🚀 PIPELINE SPED FISCAL - MODO LINEAR")
+        print(f"{'='*80}")
+        print(f"📁 Arquivos: {len(self.arquivos)}")
+        print(f"🏢 Empresa:  {self.empresa_id}")
+        print(f"{'='*80}\n")
 
-        # Criar workers de persistência com ThreadPoolExecutor para melhor gerenciamento
-        workers = []
-        for i in range(self.num_workers):
-            workerSession = getSessionFS()
-            worker = Persistencia(self.fila, workerSession, self.empresa_id)
-            worker.name = f"Worker-{i+1}"
-            worker.start()
-            workers.append(worker)
+        self.stats_global["tempo_inicio"] = time.time()
 
+        # Soft delete prévio
         try:
-            # Criar threads de leitura com ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=len(self.arquivos)) as executor:
-                futures = []
-                
-                for idx, arquivo in enumerate(self.arquivos):
-                    leitor = LeitorService(
-                        self.session,
-                        self.empresa_id,
-                        [arquivo],
-                        self.fila,
-                        self.buffer_size
-                    )
-                    future = executor.submit(leitor.executar)
-                    futures.append(future)
-                
-                # Aguardar término de todas as leituras
-                for future in futures:
-                    try:
-                        future.result()
-                    except Exception as e:
-                        print(f"[ERRO] Falha na leitura: {e}")
-
-            print("[INFO] Todas as leituras finalizadas. Aguardando processamento...")
-            
-            # Aguardar fila esvaziar
-            self.fila.join()
-            print("[INFO] Fila de processamento vazia.")
-
+            periodo = SoftDeleteService.extrairPeriodo(self.arquivos)
+            print(f"🧹 Aplicando soft delete: período {periodo}")
+            SoftDeleteService.softDelete(self.session, self.empresa_id, periodo)
+            print(f"✅ Soft delete concluído\n")
         except Exception as e:
-            print(f"[ERRO] Falha no pipeline: {e}")
-            raise
-        
-        finally:
-            # Enviar sinal de parada para todos os workers
-            print("[INFO] Enviando sinal de parada para workers...")
-            for _ in workers:
-                self.fila.put((float("inf"), "parou", None, None))
+            print(f"⚠️ Erro no soft delete: {e}\n")
 
-            # Aguardar finalização dos workers com timeout
-            for w in workers:
-                w.join(timeout=30)
-                if w.is_alive():
-                    print(f"[WARN] Worker {w.name} não finalizou no timeout")
+        # Processar cada arquivo sequencialmente
+        for idx, arquivo in enumerate(self.arquivos, 1):
+            print(f"\n{'─'*80}")
+            print(f"📄 [{idx}/{len(self.arquivos)}] {arquivo}")
+            print(f"{'─'*80}")
+            
+            try:
+                # 1. Ler arquivo
+                dados = self.leitor.ler_arquivo(arquivo)
+                
+                # 2. Salvar no banco
+                stats = self.persistencia.salvar_arquivo(dados)
+                
+                # 3. Atualizar estatísticas
+                self.stats_global["arquivos_processados"] += 1
+                self.stats_global["c100_total"] += stats["c100"]
+                self.stats_global["c170_total"] += stats["c170"]
+                self.stats_global["c190_total"] += stats["c190"]
+                self.stats_global["notas_ignoradas_total"] += stats["notas_ignoradas"]
+                
+                print(f"✅ Arquivo processado com sucesso!")
+                
+            except Exception as e:
+                erro_msg = f"Erro ao processar {arquivo}: {e}"
+                self.stats_global["erros"].append(erro_msg)
+                print(f"❌ {erro_msg}")
+                import traceback
+                traceback.print_exc()
 
-            self.stats['tempo_fim'] = time.time()
-            self._exibir_estatisticas()
+        # Estatísticas finais
+        self.stats_global["tempo_fim"] = time.time()
+        self._exibir_estatisticas()
+
+        return self.stats_global
 
     def _exibir_estatisticas(self):
-        """Exibe estatísticas do processamento"""
-        tempo_total = self.stats['tempo_fim'] - self.stats['tempo_inicio']
-        print("\n" + "="*60)
-        print("ESTATÍSTICAS DO PIPELINE")
-        print("="*60)
-        print(f"Tempo total: {tempo_total:.2f}s")
-        print(f"Arquivos processados: {len(self.arquivos)}")
-        print(f"Workers utilizados: {self.num_workers}")
-        print(f"Taxa média: {len(self.arquivos)/tempo_total:.2f} arquivos/s")
-        print("="*60 + "\n")
+        """Exibe estatísticas finais consolidadas"""
+        tempo_total = self.stats_global["tempo_fim"] - self.stats_global["tempo_inicio"]
+        
+        print(f"\n{'='*80}")
+        print(f"📊 ESTATÍSTICAS FINAIS")
+        print(f"{'='*80}")
+        
+        print(f"\n⏱️  Tempo:")
+        print(f"   ├─ Total:                {tempo_total:.2f}s")
+        if self.arquivos:
+            print(f"   └─ Médio por arquivo:    {tempo_total/len(self.arquivos):.2f}s")
+        
+        print(f"\n📁 Arquivos:")
+        print(f"   ├─ Total:                {len(self.arquivos)}")
+        print(f"   ├─ Processados:          {self.stats_global['arquivos_processados']}")
+        print(f"   └─ Com erro:             {len(self.stats_global['erros'])}")
+        
+        print(f"\n📋 Registros salvos:")
+        print(f"   ├─ C100 (Notas):         {self.stats_global['c100_total']:,}")
+        print(f"   ├─ C170 (Itens):         {self.stats_global['c170_total']:,}")
+        print(f"   ├─ C190 (Totalizadores): {self.stats_global['c190_total']:,}")
+        print(f"   └─ Notas ignoradas:      {self.stats_global['notas_ignoradas_total']:,}")
+        
+        if self.stats_global['c100_total'] > 0:
+            print(f"\n📊 Médias:")
+            print(f"   ├─ C170 por nota:        {self.stats_global['c170_total']/self.stats_global['c100_total']:.2f}")
+            print(f"   └─ C190 por nota:        {self.stats_global['c190_total']/self.stats_global['c100_total']:.2f}")
+        
+        if self.stats_global['erros']:
+            print(f"\n❌ Erros ({len(self.stats_global['erros'])}):")
+            for i, erro in enumerate(self.stats_global['erros'], 1):
+                print(f"   {i}. {erro}")
+        
+        print(f"\n{'='*80}\n")

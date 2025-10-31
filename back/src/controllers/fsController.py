@@ -15,31 +15,39 @@ class FsController:
 
     def processar(self) -> list:
         etapas = []
-
         session_icms = getSessionICMS()
         session_export = getSessionFS()
 
-        etapas.append({"percent": 23, "mensagem": "Atualizando fornecedores..."})
-        repo = FornecedorRepository(session_export)
-        fornecedor_service = FornecedorService(repo)
-        fornecedor_service.processar(self.empresa_id)
-        
-        etapas.append({"percent": 42, "mensagem": "Sincronizando produtos..."})
-        transfer = TransferDataService(session_icms, session_export)
-        transfer.sincronizarEmpresa(self.empresa_id)
+        try:
+            etapas.append({"percent": 23, "mensagem": "Atualizando fornecedores..."})
+            repo = FornecedorRepository(session_export)
+            fornecedor_service = FornecedorService(repo)
+            fornecedor_service.processar(self.empresa_id)
+            
+            etapas.append({"percent": 42, "mensagem": "Sincronizando produtos..."})
+            transfer = TransferDataService(session_icms, session_export)
+            transfer.sincronizarEmpresa(self.empresa_id)
 
-        etapas.append({"percent": 72, "mensagem": "Executando ETL..."})
-        session = getSessionFS()
-        caminhos = [os.path.abspath(f) for f in self.arquivos]
-        pipeline = PipelineService(session, self.empresa_id, caminhos)
-        pipeline.executar()
+            etapas.append({"percent": 72, "mensagem": "Executando ETL..."})
+            session = getSessionFS()
+            caminhos = [os.path.abspath(f) for f in self.arquivos]
+            pipeline = PipelineService(session, self.empresa_id, caminhos)
+            pipeline.executar()
 
-        etapas.append({"percent": 100, "mensagem": "Processamento concluído."})
+            etapas.append({"percent": 100, "mensagem": "Processamento concluído."})
 
-        return etapas
+            return etapas
+        finally:
+            if session_icms:
+                session_icms.close()
+            if session_export:
+                session_export.close()
 
     def arquivoFs(self) -> str:
         gerador = GerarArquivo(self.empresa_id, self.output_path)
-        file_path = gerador.gerar()
-        print("Arquivo .fs gerado com sucesso!")
-        return file_path
+        try:
+            file_path = gerador.gerar()
+            print("Arquivo .fs gerado com sucesso!")
+            return file_path
+        finally:
+            del gerador
