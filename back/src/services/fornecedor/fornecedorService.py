@@ -9,39 +9,45 @@ class FornecedorService:
     def __init__(self, repository: FornecedorRepository):
         self.repository = repository
 
+    async def _processar_async(self, empresa_id: int):
+        print("Buscando novos fornecedores...")
+        df_novos = self.repository.novosFornecedores(empresa_id)
+        
+        if not df_novos.empty:
+            inseridos = self.repository.inserirFornecedores(empresa_id, df_novos)
+            print(f"{inseridos} fornecedores inseridos")
+        else:
+            print("Nenhum fornecedor novo")
+
+        print("Verificando CNPJs pendentes...")
+        cnpjs = self.repository.cnpjsPendentes(empresa_id)
+        
+        if not cnpjs:
+            print("Nenhum CNPJ pendente")
+            return
+
+        print(f"Consultando {len(cnpjs)} CNPJs...")
+        resultados = await processarCnpjs(cnpjs)
+
+        print("Atualizando fornecedores...")
+        total_atualizado = 0
+        for i in range(0, len(cnpjs), LOTE):
+            batch = cnpjs[i:i + LOTE]
+            atualizado = self.repository.atualizarFornecedores(empresa_id, resultados, batch)
+            total_atualizado += atualizado
+        
+        print(f"{total_atualizado} fornecedores atualizados")
+
     def processar(self, empresa_id: int):
         try:
-            print("Buscando fornecedores novos para inserção...")
-            df_novos = self.repository.novosFornecedores(empresa_id)
-            print(f"Novos fornecedores encontrados: {len(df_novos)}")
-            inseridos = self.repository.inserirFornecedores(empresa_id, df_novos)
-            print(f"{inseridos} fornecedores inseridos.")
-
-            print("Atualizando fornecedores com dados externos...")
-            cnpjs = self.repository.cnpjsPendentes(empresa_id)
-            print(f"CNPJs pendentes: {len(cnpjs)}")
-
-            if not cnpjs:
-                print("Nenhum CNPJ pendente de atualização.")
-                return
-
-            print(f"Consultando API externa para {len(cnpjs)} CNPJs...")
-            try:
-                loop = asyncio.get_running_loop()
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, processarCnpjs(cnpjs))
-                    resultados = future.result()
-            except RuntimeError:
-                resultados = asyncio.run(processarCnpjs(cnpjs))
-
-            print("Atualizando cadastro_fornecedores")
-            for i in range(0, len(cnpjs), LOTE):
-                batch = cnpjs[i:i + LOTE]
-                self.repository.atualizarFornecedores(empresa_id, resultados, batch)
-                print(f"✅ Lote de {len(batch)} CNPJs atualizado.")
-
-            print("Atualização finalizada com sucesso.")
-
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    asyncio.run, 
+                    self._processar_async(empresa_id)
+                )
+                future.result(timeout=300) 
+        except concurrent.futures.TimeoutError:
+            print("Timeout ao processar fornecedores")
         except Exception as e:
+            print(f"Erro: {e}")
             self.repository.db.rollback()
-            print(f"[ERRO] Falha na atualização de fornecedores: {e}")

@@ -27,6 +27,7 @@ class Registro0200Repository:
                 index=False,
                 method="multi",
             )
+            print(f"[DEBUG 0200] {len(df)} registros inseridos")
         except Exception as e:
             self.session.rollback()
             print(f"[ERRO] Falha ao salvar registros 0200: {e}")

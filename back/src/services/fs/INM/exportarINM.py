@@ -19,13 +19,13 @@ class ExportarINM:
                 e.simples            AS empresa_simples,
 
                 c170.cfop            AS cfop,
+                c170.cst_icms        AS cst_icms,
                 SUM(c170.vl_item)        AS vl_opr,
                 SUM(c170.vl_bc_icms)     AS vl_bc_icms,
                 SUM(c170.vl_icms)        AS vl_icms,
                 SUM(c170.vl_bc_icms_st)  AS vl_bc_icms_st,
                 SUM(c170.vl_icms_st)     AS vl_icms_st,
                 SUM(c170.vl_ipi)         AS vl_ipi,
-                MAX(c170.cst_icms)       AS cst_icms,
                 MAX(c170.aliq_icms)      AS aliq_icms
             FROM registro_c100 AS c100
             JOIN registro_c170 c170
@@ -54,8 +54,8 @@ class ExportarINM:
             params["c100_ids"] = tuple(c100_ids)
 
         query += """
-            GROUP BY c100.id, c100.cod_part, c100.cod_mod, p.uf, e.simples, c170.cfop
-            ORDER BY c100.id, c170.cfop
+            GROUP BY c100.id, c100.cod_part, c100.cod_mod, p.uf, e.simples, c170.cfop, c170.cst_icms
+            ORDER BY c100.id, c170.cfop, c170.cst_icms
         """
 
         rows = self.session.execute(text(query), params).mappings().all()

@@ -1,55 +1,63 @@
 import re
 from sqlalchemy import text
 
+
 class SoftDeleteService:
 
     @staticmethod
-    def softDelete(session, empresa_id: int, periodo: str):
-        tabelas = ["registro_0000", "registro_0150", "registro_0200","registro_c100", "registro_c170", "registro_c190"]
-            
+    def softDelete(session, empresa_id: int):
+        tabelas = [
+            "registro_0000",
+            "registro_0150",
+            "registro_0200",
+            "registro_c100",
+            "registro_c170",
+            "registro_c190",
+        ]
+
+        total_desativados = 0
         for tabela in tabelas:
             sql = text(f"""
                 UPDATE {tabela}
                 SET ativo = 0
-                WHERE empresa_id = :empresa_id
-                AND periodo = :periodo
-                AND ativo = 1
+                WHERE empresa_id = :empresa_id AND ativo = 1
             """)
-            session.execute(sql, {"empresa_id": empresa_id, "periodo": periodo})
+            resultado = session.execute(sql, {"empresa_id": empresa_id})
+            total_desativados += resultado.rowcount or 0
 
         session.commit()
+        session.close()
+        return total_desativados
 
     @staticmethod
-    def extrairPeriodo(arquivos: list[str]) -> str:
+    def extrairPeriodo(arquivos: list[str]) -> str | None:
         if not arquivos:
-            raise ValueError("Lista de arquivos vazia.")
+            return None
 
-        periodosEncontrados = set()
+        periodos_encontrados = set()
+        encodings = ["latin-1", "utf-8", "utf-16", "cp1252"]
 
         for caminho in arquivos:
-            encodings = ["latin-1", "utf-8", "utf-16", "cp1252"]
             for enc in encodings:
                 try:
                     with open(caminho, "r", encoding=enc, errors="ignore") as f:
-                        primeiraLinha = f.readline().strip()
-                        if primeiraLinha.startswith("|0000|"):
-                            partes = primeiraLinha.split("|")
+                        primeira_linha = f.readline().strip()
+                        if primeira_linha.startswith("|0000|"):
+                            partes = primeira_linha.split("|")
                             if len(partes) > 4:
                                 data_ini = partes[4]
-
                                 if re.match(r"\d{8}", data_ini):
                                     mes = data_ini[2:4]
                                     ano = data_ini[4:]
-                                    periodo = f"{mes}/{ano}"
-                                    periodosEncontrados.add(periodo)
+                                    periodos_encontrados.add(f"{mes}/{ano}")
                                     break
                 except Exception:
                     continue
 
-        if not periodosEncontrados:
-            raise ValueError("Nenhum período válido foi encontrado nos arquivos SPED.")
+        if not periodos_encontrados:
+            return None
 
-        if len(periodosEncontrados) > 1:
-            raise ValueError(f"Os arquivos contêm períodos diferentes: {periodosEncontrados}")
+        if len(periodos_encontrados) > 1:
+            return sorted(periodos_encontrados, reverse=True)[0]
 
-        return periodosEncontrados.pop()
+        return periodos_encontrados.pop()

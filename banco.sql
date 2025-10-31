@@ -239,6 +239,49 @@ CREATE TABLE log (
     CONSTRAINT fk_log_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 );
 
+-- ============================================================
+-- 1️⃣ Adiciona campo doc_key em registro_c100
+-- ============================================================
+ALTER TABLE registro_c100 
+ADD COLUMN doc_key VARCHAR(120) AFTER chv_nfe;
+
+-- Cria índice único para evitar duplicidades por empresa + doc_key
+CREATE UNIQUE INDEX idx_doc_key_empresa 
+ON registro_c100 (empresa_id, doc_key);
+
+-- ============================================================
+-- 2️⃣ Adiciona campo doc_key em registro_c170
+-- ============================================================
+ALTER TABLE registro_c170 
+ADD COLUMN doc_key VARCHAR(120) AFTER resultado;
+
+-- Índice auxiliar (opcional, melhora buscas e joins por doc_key)
+CREATE INDEX idx_doc_key_c170 
+ON registro_c170 (empresa_id, doc_key);
+
+-- ============================================================
+-- 3️⃣ Adiciona campo doc_key em registro_c190
+-- ============================================================
+ALTER TABLE registro_c190 
+ADD COLUMN doc_key VARCHAR(120) AFTER cod_obs;
+
+-- Índice auxiliar (opcional)
+CREATE INDEX idx_doc_key_c190 
+ON registro_c190 (empresa_id, doc_key);
+
+-- ============================================================
+-- 4️⃣ Adiciona chaves estrangeiras (opcionais, mas recomendadas)
+-- ============================================================
+ALTER TABLE registro_c170
+ADD CONSTRAINT fk_c170_c100 
+FOREIGN KEY (c100_id) REFERENCES registro_c100(id)
+ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE registro_c190
+ADD CONSTRAINT fk_c190_c100 
+FOREIGN KEY (c100_id) REFERENCES registro_c100(id)
+ON DELETE CASCADE ON UPDATE CASCADE;
+
 
 SELECT id, num_doc 
 FROM c100

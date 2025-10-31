@@ -1,7 +1,7 @@
 import re
 import unicodedata
 from typing import Dict, Any
-from datetime import date
+from datetime import date, datetime
 
 UNIDADES = {
     "KG": "QUILOGRAMA",
@@ -200,3 +200,52 @@ def adicionarLinhas(destino: list, origem):
     
     elif isinstance(origem, str):
         destino.append(origem)
+
+from datetime import datetime
+import re
+
+def parse_data_sped(valor: str):
+    """
+    Converte datas do SPED nos formatos:
+    - DDMMAAAA (ex: 03052025)
+    - AAAAMMDD (ex: 20250503)
+    Ignora chaves de NF-e ou valores não numéricos.
+    """
+    if not valor:
+        return None
+
+    valor = valor.strip().replace("-", "").replace("/", "")
+    
+    # ✅ Ignora se não tiver exatamente 8 dígitos
+    if not re.fullmatch(r"\d{8}", valor):
+        return None
+
+    for fmt in ("%d%m%Y", "%Y%m%d"):
+        try:
+            return datetime.strptime(valor, fmt).date()
+        except ValueError:
+            continue
+
+    print(f"[DEBUG] Data inválida detectada no SPED: '{valor}'")
+    return None
+
+#Converte valor para float com validação
+def floatC100(valor):
+    if valor is None or valor == '':
+        return 0.0
+    try:
+        result = float(valor)
+        # Validar range (evitar overflow)
+        if result > 999999999.99 or result < -999999999.99:
+            return 999999999.99 if result > 0 else -999999999.99
+        return result
+    except (ValueError, TypeError):
+        return 0.0
+
+#Escapa aspas simples em strings para evitar SQL injection
+def escapeString (valor):
+    if not valor:
+        return ''
+    # Remover caracteres de controle e escapar aspas
+    valor_limpo = str(valor).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    return valor_limpo.replace("'", "''")

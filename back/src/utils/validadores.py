@@ -71,3 +71,4 @@ def validarSpedFiscal(arquivo: str) -> bool:
             )
 
         return True
+

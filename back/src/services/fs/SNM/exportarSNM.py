@@ -21,7 +21,9 @@ class ExportarSNM:
                 SUM(c170.vl_ipi)       AS vl_ipi,
                 MAX(c170.cst_icms)     AS cst_icms,
                 MAX(c170.cfop)         AS cfop,
-                MAX(e.simples)         AS empresa_simples
+                MAX(e.simples)         AS empresa_simples,
+                MAX(f.decreto)         AS fornecedor_decreto,
+                MAX(f.uf)              AS fornecedor_uf
 
             FROM registro_c170 AS c170
 
@@ -34,15 +36,22 @@ class ExportarSNM:
                 ON p.codigo = c170.cod_item
                 AND p.empresa_id = c170.empresa_id
 
+            INNER JOIN fornecedores AS f
+                ON f.cod_part = c100.cod_part
+                AND f.empresa_id = c170.empresa_id
+
             LEFT JOIN empresas AS e
                 ON e.id = c100.empresa_id
 
             WHERE
                 c170.empresa_id = :empresa_id
                 AND c170.ativo = 1
+                AND c100.cod_mod IN ('01', '1B', '04', '55')
+                AND c170.cfop IN ('1101', '1401', '1102', '1403', '1910', '1116', '2101', '2102', '2401', '2403', '2910', '2116')
                 AND p.aliquota IS NOT NULL 
                 AND p.aliquota REGEXP '^[0-9]+\\.[0-9]*$|^[0-9]+$'
                 AND CAST(p.aliquota AS DECIMAL(10,2)) > 0
+                AND UPPER(TRIM(p.aliquota)) NOT IN ('ST', 'ISENTO')
         """
 
         params = {"empresa_id": self.empresa_id}
@@ -74,6 +83,24 @@ class ExportarSNM:
         
         for registro in registros:
             c100_id = registro["c100_id"]
+            
+            fornecedor_uf = str(registro.get("fornecedor_uf", "")).strip().upper()
+            fornecedor_decreto = registro.get("fornecedor_decreto")
+            
+            if isinstance(fornecedor_decreto, bool):
+                decreto_bool = fornecedor_decreto
+            elif isinstance(fornecedor_decreto, str):
+                decreto_bool = fornecedor_decreto.lower() in ["true", "1"]
+            elif isinstance(fornecedor_decreto, int):
+                decreto_bool = fornecedor_decreto == 1
+            else:
+                decreto_bool = False
+            
+            # Se for CE com decreto, pular este registro
+            if fornecedor_uf == "CE" and decreto_bool:
+                print(f"[DEBUG SNM] Pulando c100_id={c100_id} - Fornecedor CE com decreto={fornecedor_decreto}")
+                continue
+            
             linha = builderSNM(registro)
             snm_map[c100_id].append(linha)
 

@@ -1,22 +1,20 @@
 import os
-import queue
-
+from typing import Dict, Any
 from ....src.services.etl.registros.registro0000 import Registro0000Service
 from ....src.services.etl.registros.registro0150 import Registro0150Service
 from ....src.services.etl.registros.registro0200 import Registro0200Service
 from ....src.services.etl.registros.registroC100 import RegistroC100Service
 from ....src.services.etl.registros.registroC170 import RegistroC170Service
 from ....src.services.etl.registros.registroC190 import RegistroC190Service
+from ....src.utils.key import docKey
 
-from ....src.utils.validadores import validarSpedFiscal
 
 class LeitorService:
-    def __init__(self, session, empresa_id, arquivos: list[str], fila: queue.Queue, buffer_size=10000):
+    """Serviço responsável por ler e processar arquivos SPED Fiscal."""
+
+    def __init__(self, session, empresa_id: int):
         self.session = session
         self.empresa_id = empresa_id
-        self.arquivos = arquivos
-        self.fila = fila
-        self.buffer_size = buffer_size
 
         self.s0000 = Registro0000Service(session, empresa_id)
         self.s0150 = Registro0150Service(session, empresa_id)
@@ -25,112 +23,89 @@ class LeitorService:
         self.sC170 = RegistroC170Service(session, empresa_id)
         self.sC190 = RegistroC190Service(session, empresa_id)
 
-    contador = 0
+        self.contexto = None
 
-    def executar(self):
-        for arquivo in self.arquivos:
-            self.processarArquivo(arquivo)
-
-    def processarArquivo(self, arquivo):
-        caminho = os.path.abspath(arquivo)
-
+    def lerArquivo(self, caminho: str) -> Dict[str, Any]:
         if not os.path.exists(caminho):
-            print(f"[ERRO] Arquivo não encontrado: {caminho}")
-            return
+            raise FileNotFoundError(f"Arquivo não encontrado: {caminho}")
 
-        try:
-            #validarSpedFiscal(arquivo)
-            print(f"[INFO] Arquivo validado com sucesso: {os.path.basename(caminho)}")
-        except ValueError as e:
-            print(f"[ERRO] Arquivo inválido: {e}")
-            return
-        
-        print(f"[INFO] Iniciando leitura do arquivo: {os.path.basename(caminho)}")
-        c100Atual = None
+        resultado = {
+            "cabecalhos": {"0000": [], "0150": [], "0200": []},
+            "notas": []
+        }
 
         encodings = ["latin-1", "utf-8", "utf-16", "cp1252"]
         for enc in encodings:
             try:
-                with open(arquivo, "r", encoding=enc) as f:
-                    for linha in f:
-                        campos = linha.strip().split("|")[1:-1]
-                        if len(campos) < 2:
-                            continue
-
-                        tipo = campos[0].upper()
-
-                        try:
-                            if tipo == "0000":
-                                self.s0000.processar(campos)
-                                contexto = self.s0000.get_context()
-
-                                # repassa contexto para todos os services
-                                for s in [self.s0150, self.s0200, self.sC100, self.sC170, self.sC190]:
-                                    s.set_context(contexto["periodo"], contexto["filial"])
-
-                                if len(self.s0000.lote) >= self.buffer_size:
-                                    self.enviarRegistros("0000", self.s0000.lote)
-
-                            elif tipo == "0150":
-                                self.s0150.processar(campos)
-                                if len(self.s0150.lote) >= self.buffer_size:
-                                    self.enviarRegistros("0150", self.s0150.lote)
-
-                            elif tipo == "0200":
-                                self.s0200.processar(campos)
-                                if len(self.s0200.lote) >= self.buffer_size:
-                                    self.enviarRegistros("0200", self.s0200.lote)
-
-                            elif tipo == "C100":
-                                c100Atual = self.sC100.processar(campos)
-                                mapa = self.sC100.getDocumentos()
-                                self.sC170.setDocumentos(mapa)
-                                self.sC190.setDocumentos(mapa)
-
-                                if len(self.sC100.lote) >= self.buffer_size:
-                                    self.enviarRegistros("C100", self.sC100.lote)
-
-                            elif tipo == "C170" and c100Atual:
-                                self.sC170.processar(campos, num_doc=c100Atual["num_doc"])
-                                if len(self.sC170.lote) >= self.buffer_size:
-                                    self.enviarRegistros("C170", self.sC170.lote)
-
-                            elif tipo == "C190" and c100Atual:  
-                                self.sC190.processar(campos, num_doc=c100Atual["num_doc"])
-                                if len(self.sC190.lote) >= self.buffer_size:
-                                    self.enviarRegistros("C190", self.sC190.lote)
-
-                        except Exception as e:
-                            # print(f"[ERRO] Falha ao processar linha {tipo}: {e}")
-                            continue
+                with open(caminho, "r", encoding=enc, errors="ignore") as f:
+                    self._processarLinhas(f, resultado)
                 break
             except UnicodeDecodeError:
                 continue
-            except Exception as e:
-                print(f"[ERRO] Falha ao abrir arquivo {arquivo}: {e}")
+
+        return resultado
+
+    def _processarLinhas(self, arquivo, resultado: Dict):
+        nota_atual = None
+
+        for linha in arquivo:
+            campos = linha.strip().split("|")[1:-1]
+            if len(campos) < 2:
                 continue
 
-        self.enviarRegistros("0000", self.s0000.lote)
-        self.enviarRegistros("0150", self.s0150.lote)
-        self.enviarRegistros("0200", self.s0200.lote)
-        self.enviarRegistros("C100", self.sC100.lote)
-        self.enviarRegistros("C170", self.sC170.lote)
-        self.enviarRegistros("C190", self.sC190.lote)
+            tipo = campos[0].upper()
 
-        print(f"[INFO] Leitura concluída: {os.path.basename(arquivo)}")
+            try:
+                # Cabeçalhos
+                if tipo == "0000":
+                    self.s0000.processar(campos)
+                    self.contexto = self.s0000.get_context()
 
-    def enviarRegistros(self, tipo, lote):
-        if lote:
-            prioridade = self.prioridade(tipo)
-            LeitorService.contador += 1
-            self.fila.put((prioridade, tipo,LeitorService.contador, lote.copy()))
-            print(f"[DEBUG] Lote enviado: {tipo} ({len(lote)} registros)")
-            lote.clear()
+                    for s in [self.s0150, self.s0200, self.sC100, self.sC170, self.sC190]:
+                        s.set_context(self.contexto["periodo"], self.contexto["filial"])
 
-    def prioridade(self, tipo):
-        if tipo in ["0000", "0150", "0200"]:
-            return 1
-        elif tipo == "C100":
-            return 2
-        else:  # C170, C190
-            return 3
+                    resultado["cabecalhos"]["0000"].extend(self.s0000.lote)
+                    self.s0000.lote.clear()
+
+                elif tipo == "0150":
+                    self.s0150.processar(campos)
+
+                elif tipo == "0200":
+                    self.s0200.processar(campos)
+
+                # Documentos Fiscais
+                elif tipo == "C100":
+                    if nota_atual:
+                        resultado["notas"].append(nota_atual)
+
+                    c100_dados = self.sC100.processar(campos)
+                    if c100_dados:
+                        c100_dados["doc_key"] = docKey(c100_dados)
+                        c100_dados["empresa_id"] = self.empresa_id
+                        nota_atual = {"c100": c100_dados, "c170": [], "c190": []}
+                    else:
+                        nota_atual = None
+
+                elif tipo == "C170" and nota_atual:
+                    c170_dados = self.sC170.processar(campos, num_doc=None)
+                    if c170_dados:
+                        c170_dados["doc_key"] = nota_atual["c100"]["doc_key"]
+                        c170_dados["empresa_id"] = self.empresa_id
+                        nota_atual["c170"].append(c170_dados)
+
+                elif tipo == "C190" and nota_atual:
+                    c190_dados = self.sC190.processar(campos, num_doc=None)
+                    if c190_dados:
+                        c190_dados["doc_key"] = nota_atual["c100"]["doc_key"]
+                        c190_dados["empresa_id"] = self.empresa_id
+                        nota_atual["c190"].append(c190_dados)
+
+            except Exception:
+                continue
+
+        # Adicionar última nota e cabeçalhos restantes
+        if nota_atual:
+            resultado["notas"].append(nota_atual)
+
+        resultado["cabecalhos"]["0150"].extend(self.s0150.lote)
+        resultado["cabecalhos"]["0200"].extend(self.s0200.lote)
