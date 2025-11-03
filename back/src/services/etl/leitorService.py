@@ -8,10 +8,7 @@ from ....src.services.etl.registros.registroC170 import RegistroC170Service
 from ....src.services.etl.registros.registroC190 import RegistroC190Service
 from ....src.utils.key import docKey
 
-
 class LeitorService:
-    """Serviço responsável por ler e processar arquivos SPED Fiscal."""
-
     def __init__(self, session, empresa_id: int):
         self.session = session
         self.empresa_id = empresa_id

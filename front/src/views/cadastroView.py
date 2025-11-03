@@ -8,7 +8,7 @@ from ..utils.cnpjFormatador import formatarCnpj
 
 
 def CadastroView(page: ft.Page) -> ft.View:
-    page.title = "Cadastro de Empresa"
+    #page.title = "Cadastro de Empresa"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#F5F6FA"

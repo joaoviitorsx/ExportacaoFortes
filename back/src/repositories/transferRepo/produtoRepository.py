@@ -15,30 +15,19 @@ class ProdutoRepository:
 
     def inserirDados(self, df: pd.DataFrame, empresa_id: int):
         if df.empty:
+            print("[INFO] Nenhum dado encontrado para inserção.")
             return
 
-        # Buscar códigos já cadastrados no destino
-        codigos_existentes = {
-            row[0] for row in self.session.execute(
-                text("SELECT codigo FROM produtos WHERE empresa_id = :empresa_id"),
-                {"empresa_id": empresa_id}
-            ).all()
-        }
+        df["empresa_id"] = empresa_id
 
-        # Filtrar apenas os que ainda não existem
-        novos = df[~df["codigo"].isin(codigos_existentes)].copy()
-        novos["empresa_id"] = empresa_id
+        insert_query = text("""
+            INSERT IGNORE INTO produtos (codigo, produto, ncm, aliquota, categoriaFiscal, empresa_id)
+            VALUES (:codigo, :produto, :ncm, :aliquota, :categoriaFiscal, :empresa_id)
+        """)
 
-        if novos.empty:
-            print("[INFO] Nenhum produto novo para inserir.")
-            return
+        dados = df.to_dict(orient="records")
 
-        novos.to_sql(
-            "produtos",
-            self.session.bind,
-            if_exists="append",
-            index=False,
-            method="multi",
-            chunksize=5000,
-        )
-        print(f"[INFO] {len(novos)} produtos novos inseridos.")
+        self.session.execute(insert_query, dados)
+        self.session.commit()
+
+        print(f"[INFO] Inserção concluída ({len(dados)} registros processados, duplicados ignorados).")

@@ -6,7 +6,7 @@ from ..utils.path import resourcePath
 from ..components.card import Card
 
 def EmpresaView(page: ft.Page) -> ft.View:
-    page.title = "Selecionar Empresa"
+    #page.title = "Selecionar Empresa"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#F5F6FA"
