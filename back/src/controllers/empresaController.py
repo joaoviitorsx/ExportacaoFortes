@@ -10,8 +10,8 @@ class EmpresaController:
     def listarEmpresas(self):
         return self.repo.get_all()
 
-    def cadastrarEmpresas(self, razao_social: str, cnpj: str, uf: str, simples: bool):
-        return self.repo.insert(razao_social, cnpj, uf, simples)
+    def cadastrarEmpresas(self, razao_social: str, cnpj: str, uf: str, simples: bool, aliq_espec: int = 0):
+        return self.repo.insert(razao_social, cnpj, uf, simples, aliq_espec)
     
     def buscarCnpj(self, cnpj: str):
         return CnpjService.consultarCnpj(cnpj)
