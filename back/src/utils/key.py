@@ -1,12 +1,4 @@
 def docKey(dados: dict) -> str:
-    """
-    Gera uma chave única e padronizada para identificar documentos fiscais (nota fiscal).
-    A prioridade é a CHV_NFE (chave de acesso da NF-e). 
-    Caso não exista, usa uma composição determinística dos principais campos da nota.
-    
-    Retorna:
-        str: chave única no formato "CHV_<chv_nfe>" ou "DOC_<cnpj>-<cod_mod>-<serie>-<num_doc>-<dt_doc>"
-    """
     chv_nfe = str(dados.get("chv_nfe", "")).strip()
     if chv_nfe and len(chv_nfe) == 44:
         return f"{chv_nfe}"

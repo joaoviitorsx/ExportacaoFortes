@@ -201,22 +201,13 @@ def adicionarLinhas(destino: list, origem):
     elif isinstance(origem, str):
         destino.append(origem)
 
-from datetime import datetime
-import re
-
 def parse_data_sped(valor: str):
-    """
-    Converte datas do SPED nos formatos:
-    - DDMMAAAA (ex: 03052025)
-    - AAAAMMDD (ex: 20250503)
-    Ignora chaves de NF-e ou valores não numéricos.
-    """
     if not valor:
         return None
 
     valor = valor.strip().replace("-", "").replace("/", "")
     
-    # ✅ Ignora se não tiver exatamente 8 dígitos
+    # Ignora se não tiver exatamente 8 dígitos
     if not re.fullmatch(r"\d{8}", valor):
         return None
 
