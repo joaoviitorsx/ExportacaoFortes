@@ -36,7 +36,6 @@ class ExportarSNM:
             
             # Se for CE com decreto, pular este registro
             if fornecedor_uf == "CE" and decreto_bool:
-                print(f"[DEBUG SNM] Pulando c100_id={c100_id} - Fornecedor CE com decreto={fornecedor_decreto}")
                 continue
             
             linha = builderSNM(registro)
