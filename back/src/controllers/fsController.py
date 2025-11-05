@@ -7,7 +7,6 @@ from ..services.etl.pipelineService import PipelineService
 from ..services.sync.transferDataService import TransferDataService
 from ..utils.validadores import validarSpedFiscal
 
-
 class FsController:
     def __init__(self, empresa_id: int, arquivos: list[str], output_path: str,progress_callback: Optional[Callable[[int, str], None]] = None):
         self.empresa_id = empresa_id
@@ -108,7 +107,7 @@ class FsController:
             self.notificarProgresso(100, "Processamento concluído com sucesso!")
             etapas.append({"percent": 100, "mensagem": "Processamento concluído com sucesso!"})
             
-            print(" 👌 Processamento concluído com sucesso")
+            print(" processou tudo porra")
             return etapas
             
         except ValueError as ve:
@@ -128,7 +127,6 @@ class FsController:
                 session_fs.close()
 
     def arquivoFs(self) -> str:
-        """Gera o arquivo .fs"""
         gerador = GerarArquivo(self.empresa_id, self.output_path)
         try:
             file_path = gerador.gerar()
