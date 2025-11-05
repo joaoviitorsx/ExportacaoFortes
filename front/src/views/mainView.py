@@ -86,7 +86,6 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
                     progress_callback=atualizar_progresso
                 )
 
-                # Atualiza a UI após completar
                 if resposta["status"] == "ok":
                     btnDownload.visible = True
                     btnProcessar.disabled = False
@@ -96,7 +95,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
                     notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
                 else:
                     uploaderCard.showProgress(False)
-                    uploaderCard.showFiles()  # Volta para mostrar os arquivos
+                    uploaderCard.showFiles()
                     notificacao(page, "Erro de Validação", resposta["mensagem"], tipo="erro")
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Arquivo"
@@ -105,7 +104,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
 
             except Exception as e:
                 uploaderCard.showProgress(False)
-                uploaderCard.showFiles()  # Volta para mostrar os arquivos
+                uploaderCard.showFiles()
                 notificacao(page, "Erro", f"Erro inesperado: {str(e)}", tipo="erro")
                 btnProcessar.disabled = False
                 btnProcessar.text = "Processar Arquivo"
