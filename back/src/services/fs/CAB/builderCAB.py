@@ -13,7 +13,7 @@ def builderCAB(empresa: Dict[str, Any], registro_0000: Dict[str, Any]) -> str:
     periodo_formatado = str(registro_0000.get('periodo', '')).replace('/', '')
     descricao = f"ENTRADAS {nome_empresa} {periodo_formatado}"[:40] 
     #aliquotas_especificas_flag = empresa.get("aliq_espec", False)
-    flag_aliq_especificas = "S"
+    flag_aliq_especificas = "N"
 
     linha_cab = "|".join([
         tipo_registro,
@@ -27,4 +27,4 @@ def builderCAB(empresa: Dict[str, Any], registro_0000: Dict[str, Any]) -> str:
         flag_aliq_especificas
     ])
     
-    return linha_cab + "|"
+    return linha_cab
