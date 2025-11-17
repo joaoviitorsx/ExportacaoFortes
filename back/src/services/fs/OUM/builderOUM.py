@@ -5,15 +5,12 @@ def builderOUM(dados: dict) -> str:
     cod_item = validacaoText(dados.get("cod_item", ""), 9)
     unid_inv = validacaoText(dados.get("unid_inv", ""), 6)
     unid_equiv = "1.000"  # Fixo conforme especificação
-    #cod_barra = validacaoText(dados.get("cod_barra", ""), 20)
-    cod_barra = ""
 
     campos = [
         tipo,        # 1. Tipo de Registro
         cod_item,    # 2. Código do Produto
         unid_inv,    # 3. Unidade de Medida
         unid_equiv,  # 4. Unidade Equivalente Padrão
-        "|",         # 5. Código de Barras
     ]
     
-    return "|".join(campos)
+    return "|".join(campos) + "|"
