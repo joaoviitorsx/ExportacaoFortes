@@ -71,4 +71,4 @@ def builderINM(dados: Dict[str, Any]) -> str:
     campos[32] = ""                                      # 33 - Valor do FCP - Subst. Trib.
     campos[33] = ""                                      # 34 - Aliquota do ICMS Deferido
 
-    return "|".join(map(str, campos)) + "|"
+    return "|".join(map(str, campos))

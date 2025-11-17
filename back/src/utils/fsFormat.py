@@ -113,24 +113,31 @@ def formatarValor(value: Any, precision: int = 2) -> str:
 
 #Define o código de Tributação ICMS (Campo 11 do PNM) com base no CSTB.
 def tributacaoICMS(cstb: str, aliquota_cadastro: str) -> str:
+    """
+    Retorna o código de Tributação ICMS para o campo 11 do PNM:
+    1 = Débito/Crédito
+    2 = Isento
+    3 = Outros
+    """
     # 1. Prioridade: Verifica a informação do cadastro de produtos
     aliquota_str = str(aliquota_cadastro).strip().upper()
     if aliquota_str == 'ST':
-        return '3'  # Substituição Tributária
-    if aliquota_str == 'ISENTO' or aliquota_str == 'I':
-        return '4'  # Isenta
+        return '3'  # Outros (Substituição Tributária)
+    if aliquota_str in ('ISENTO', 'I'):
+        return '2'  # Isento
 
-    # 2. Se não for um código, usa a lógica padrão baseada no CST
-    if cstb in ('10', '30', '60', '70', '90'):
-        return '3'  # Substituição Tributária
-    if cstb == '20':
-        return '2'  # Redução na Base de Cálculo
-    if cstb in ('40', '41', '50'):
-        return '4'  # Isenta
-    if cstb == '51':
-        return '5'  # Diferimento
+    # 2. Se não for um código do cadastro, usa a lógica baseada no CSTB
+    if cstb in ('00', '10', '20', '70'):
+        return '1'  # Débito/Crédito
     
-    return '1'  # Padrão: Tributado Integralmente
+    if cstb in ('40', '41'):
+        return '2'  # Isento
+    
+    if cstb in ('60', '90', '30', '50', '51'):
+        return '3'  # Outros
+    
+    # Padrão: Débito/Crédito
+    return '1'
 
 #Formata um objeto date para YYYYMMDD. Retorna vazio se a data for nula.
 def formatarData(value: Any) -> str:

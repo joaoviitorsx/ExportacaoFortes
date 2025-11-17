@@ -97,10 +97,14 @@ class FornecedorRepository:
                     continue
 
                 razao_social, cnae, uf, simples, decreto = dados
+                
+                # Garante que CNAE seja string e preserve zeros à esquerda
+                cnae_str = str(cnae).zfill(7) if cnae and str(cnae).strip() else ""
+                
                 params = {
                     "empresa_id": empresa_id,
                     "cnpj": cnpj,
-                    "cnae": cnae or "",
+                    "cnae": cnae_str,
                     "uf": uf or "",
                     "simples": str(simples or "False"),
                     "decreto": str(decreto or "False")
