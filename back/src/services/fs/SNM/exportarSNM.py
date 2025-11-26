@@ -10,6 +10,7 @@ class ExportarSNM:
         self.chunk_size = chunk_size
         self.repo = SnmRepository(session)
 
+    # Repository já filtra e valida tudo
     def gerar(self, c100_ids: Optional[Sequence[int]] = None) -> Dict[int, List[str]]:
         registros = self.repo.get_registros(self.empresa_id, c100_ids)
         
@@ -20,24 +21,6 @@ class ExportarSNM:
         
         for registro in registros:
             c100_id = registro["c100_id"]
-            
-            fornecedor_uf = str(registro.get("fornecedor_uf", "")).strip().upper()
-            fornecedor_decreto = registro.get("fornecedor_decreto")
-            
-            # Normalizar decreto para boolean
-            if isinstance(fornecedor_decreto, bool):
-                decreto_bool = fornecedor_decreto
-            elif isinstance(fornecedor_decreto, str):
-                decreto_bool = fornecedor_decreto.lower() in ["true", "1"]
-            elif isinstance(fornecedor_decreto, int):
-                decreto_bool = fornecedor_decreto == 1
-            else:
-                decreto_bool = False
-            
-            # Se for CE com decreto, pular este registro
-            if fornecedor_uf == "CE" and decreto_bool:
-                continue
-            
             linha = builderSNM(registro)
             snm_map[c100_id].append(linha)
 

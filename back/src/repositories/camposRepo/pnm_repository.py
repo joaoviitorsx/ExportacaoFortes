@@ -13,7 +13,7 @@ class PnmRepository:
 
     def get_itens(self, empresa_id: int, c100_ids: Optional[Sequence[int]] = None) -> List[Dict[str, Any]]:
         query = """
-            SELECT DISTINCT
+            SELECT 
                 c170.id AS c170_id, c170.c100_id AS c100_id, c170.cod_item AS cod_item,
                 c170.cfop AS cfop, c170.unid AS unid, c170.qtd AS qtd, c170.vl_item AS vl_item,
                 c170.vl_desc AS vl_desc, c170.cst_icms AS cst_icms, c170.vl_bc_icms AS vl_bc_icms,
@@ -27,19 +27,19 @@ class PnmRepository:
                 c170.quant_bc_cofins AS quant_bc_cofins, c170.cod_cta AS cod_cta, c170.cod_nat AS cod_nat, 
                 c100.cod_part AS fornecedor_cod_part,
                 f.simples AS fornecedor_simples,
-                f.decreto AS fornecedor_decreto
+                f.decreto AS fornecedor_decreto,
+                f.uf AS fornecedor_uf
             FROM registro_c170 c170
             JOIN registro_c100 c100 
                 ON c170.c100_id = c100.id
-            JOIN fornecedores f 
+            LEFT JOIN fornecedores f 
                 ON f.cod_part = c100.cod_part
                 AND f.empresa_id = c170.empresa_id
             WHERE c170.empresa_id = :empresa_id
                 AND c170.ativo = 1
                 AND c100.ativo = 1
-                AND c100.cod_mod IN ('01', '1B', '04', '55')
-                AND c170.cfop IN ('1101', '1401', '1102', '1403', '1910', '1116', '2101', '2102', '2401', '2403', '2910', '2116')
-                AND ((f.uf = 'CE' AND f.decreto = 0) OR f.uf != 'CE')
+                -- AND c100.cod_mod IN ('01', '1B', '04', '55')
+                -- AND c170.cfop IN ('1101', '1401', '1102', '1403', '1910', '1116', '2101', '2102', '2401', '2403', '2910', '2116')
         """
         params = {"empresa_id": empresa_id}
 

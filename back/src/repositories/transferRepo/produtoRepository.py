@@ -27,6 +27,7 @@ class ProdutoRepository:
 
         dados = df.to_dict(orient="records")
 
+        # Produtos com o mesmo 'codigo' não serão inseridos devido à UNIQUE KEY em 'codigo'
         self.session.execute(insert_query, dados)
         self.session.commit()
 

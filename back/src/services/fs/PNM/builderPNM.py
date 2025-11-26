@@ -43,45 +43,45 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         cst_pis = str(dados.get("vl_bc_pis") or "").strip()
         cst_pis_final = cst_pis if cst_pis else formatarValor(dados.get("vl_item"))
 
-    aliquotaProduto = str(dados.get("aliquota_cadastro") or "").strip().upper()
-    stOrIsento = aliquotaProduto in ("ST", "ISENTO")
-
-    fornecedorSimples = str(dados.get("fornecedor_simples")).lower() == "true"
-    fornecedorDecreto = str(dados.get("fornecedor_decreto")).lower() == "true"
+    # Obter dados do produto e fornecedor
+    aliquotaProduto = str(dados.get("aliquota_cadastro", "")).strip().upper()
     fornecedor_uf = str(dados.get("fornecedor_uf", "")).strip().upper()
+    fornecedor_simples_raw = str(dados.get("fornecedor_simples", "")).strip()
+    fornecedor_decreto_raw = str(dados.get("fornecedor_decreto", "")).strip()
+
+    # Validações
+    produtoExisteNaTabela = aliquotaProduto not in ("", "NONE", "NULL")
+    stOrIsento = aliquotaProduto in ("ST", "ISENTO")
+    fornecedorSimples = fornecedor_simples_raw == "True"
+    fornecedorDecreto = fornecedor_decreto_raw == "True"
+
+    # Inicializar campos 16-21
     campo_16 = campo_17 = campo_18 = campo_19 = campo_20 = campo_21 = ""
 
-    if fornecedor_uf == "CE" and not stOrIsento and not fornecedorDecreto:
-        if fornecedorSimples:
-            campo_16 = "1"
-            campo_17 = "1"
-            campo_18 = formatarValor(valorTotal)
-            campo_19 = ""
-            campo_20 = formatarValor(valorTotal)
-
-            valorAliquota = str(aliquotaProduto).strip()
-            if valorAliquota and valorAliquota not in ["", "None", "null"]:
-                try:
-                    aliquota = float(str(aliquotaProduto).replace('%', '').replace(',', '.'))
-                    aliquotaFinal = aliquota + 3.0
-                    campo_21 = formatarValor(aliquotaFinal)
-                except (ValueError, AttributeError) as e:
-                    campo_21 = ""
+    # Condições para preencher campos 16-21 (Substituição Tributária):
+    # 1. Produto deve existir na tabela produtos
+    # 2. Fornecedor deve ser do CE
+    # 3. Produto NÃO pode ser ST ou ISENTO
+    # 4. Fornecedor NÃO pode ter decreto
+    if produtoExisteNaTabela and fornecedor_uf == "CE" and not stOrIsento and not fornecedorDecreto:
+        campo_16 = "1" 
+        campo_17 = "1"
+        campo_18 = formatarValor(valorTotal)
+        campo_19 = ""
+        campo_20 = formatarValor(valorTotal)
+        try:
+            aliquota = float(aliquotaProduto.replace('%', '').replace(',', '.'))
+            
+            if fornecedorSimples:
+                # Fornecedor Simples Nacional: alíquota + 3%
+                aliquotaFinal = aliquota + 3.0
             else:
-                campo_21 = ""   
-
-        elif not fornecedorSimples:
-            campo_16 = "1"
-            campo_17 = "1"
-            campo_18 = formatarValor(valorTotal)
-            campo_19 = ""
-            campo_20 = formatarValor(valorTotal)
-
-            try:
-                aliquota = float(str(aliquotaProduto).replace('%', '').replace(',', '.'))
-                campo_21 = formatarValor(aliquota)
-            except (ValueError, AttributeError) as e:
-                campo_21 = ""
+                aliquotaFinal = aliquota
+            
+            campo_21 = formatarValor(aliquotaFinal)
+            
+        except (ValueError, AttributeError):
+            campo_21 = ""
 
     campos = [
         "PNM",                                               # 1. Tipo de registro
@@ -146,8 +146,7 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         "",                                                  # 60. Pedido de Compra
         "",                                                  # 61. Item do pedido de compra
         formatarValor(dados.get("outras_desp_rateado")),     # 62. Outras Despesas
-        "",                                                  # 63. Conta Contábil                                    
-        #str(dados.get("cod_cta", ''))[:15],
+        "",                                                  # 63. Conta Contábil
         "0",                                                 # 64. Item Não Compoe Valor Total
         "",                                                  # 65. Natureza da Contribuição do Estorno COFINS
         "",                                                  # 66. Natureza da contribuição do Estorno PIS
