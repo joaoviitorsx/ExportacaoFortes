@@ -1,4 +1,4 @@
-﻿# 🚀 ExportacaoFortes
+﻿# 🚀 Exportacao Fortes
 
 Sistema desktop para conversão de arquivos SPED Fiscal (EFD ICMS/IPI) para o formato **Fortes Fiscal (.fs)**, facilitando a importação de notas fiscais e movimentações tributárias.
 
