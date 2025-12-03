@@ -1,11 +1,23 @@
 import os
+import sys
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from .base import Base
 
-load_dotenv()
+# Carregar .env do executável PyInstaller ou do ambiente de desenvolvimento
+if getattr(sys, 'frozen', False):
+    # Executável PyInstaller - buscar no diretório temporário extraído
+    base_path = sys._MEIPASS
+    env_path = os.path.join(base_path, '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    else:
+        load_dotenv()  # Fallback
+else:
+    # Desenvolvimento
+    load_dotenv()
 
 USER = os.getenv("USER_FS")
 PASS = os.getenv("PASSWORD_FS")
