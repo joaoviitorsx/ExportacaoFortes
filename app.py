@@ -6,7 +6,7 @@ from front.src.utils.path import resourcePath
 
 
 def main(page: ft.Page):
-    page.title = "SPED → Fortes Fiscal"
+    page.title = "Conversor SPED para Fortes Fiscal"
     page.window.height = 880
     page.window.width = 680
     #page.window.resizable = False
@@ -49,7 +49,6 @@ def main(page: ft.Page):
 
     page.on_route_change = route
     page.go("/")
-
 
 if __name__ == "__main__":
     ft.app(target=main)

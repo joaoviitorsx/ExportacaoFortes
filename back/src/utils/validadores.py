@@ -38,37 +38,48 @@ def formatarValor(value):
         return cleaned
 
 def validarSpedFiscal(arquivo: str) -> bool:
-        if not os.path.exists(arquivo):
-            raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
+    if not os.path.exists(arquivo):
+        raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
 
-        if not arquivo.lower().endswith(".txt"):
-            raise ValueError("Arquivo inválido: apenas arquivos .txt são aceitos.")
+    if not arquivo.lower().endswith(".txt"):
+        raise ValueError("Apenas arquivos .txt são aceitos")
 
-        encodings = ["latin-1", "utf-8", "utf-16", "cp1252"]
-        linhas = None
-        for enc in encodings:
-            try:
-                with open(arquivo, "r", encoding=enc) as f:
-                    linhas = [l.strip() for _, l in zip(range(5000), f) if l.strip()]
-                    break
-            except (UnicodeDecodeError, StopIteration):
-                continue
-            except Exception as e:
-                raise ValueError(f"Erro ao abrir o arquivo: {e}")
+    # Tenta ler com diferentes encodings
+    encodings = ["latin-1", "utf-8", "cp1252", "utf-16"]
+    linhas = None
+    
+    for enc in encodings:
+        try:
+            with open(arquivo, "r", encoding=enc) as f:
+                linhas = [l.strip() for l in f if l.strip()]
+                break
+        except (UnicodeDecodeError, StopIteration):
+            continue
+        except Exception as e:
+            raise ValueError(f"Erro ao ler arquivo: {e}")
 
-        if not linhas:
-            raise ValueError("Arquivo inválido: não foi possível ler o conteúdo (arquivo corrompido ou codificação incorreta).")
+    if not linhas:
+        raise ValueError("Arquivo vazio ou corrompido")
 
-        registros = ["|0000|", "|0150|", "|0200|", "|C100|", "|C170|", "|C190|"]
+    # Valida formato pipe
+    if not any("|" in linha for linha in linhas[:100]):
+        raise ValueError("Formato inválido: arquivo deve ter campos separados por pipe (|)")
 
-        faltantes = [r for r in registros if not any(l.startswith(r) for l in linhas)]
+    # Valida primeira linha (deve ser 0000)
+    if not linhas[0].startswith("|0000|"):
+        raise ValueError("Formato inválido: arquivo deve começar com registro |0000|")
 
-        if faltantes:
-            faltantes_fmt = ", ".join(r.replace("|", "") for r in faltantes)
-            raise ValueError(
-                f"Arquivo inválido: faltam os registros obrigatórios {faltantes_fmt}. "
-                "Verifique se o arquivo é realmente um SPED Fiscal EFD ICMS/IPI."
-            )
+    # Registros obrigatórios
+    registros_obrigatorios = ["|0000|", "|0150|", "|0200|", "|C100|", "|C170|", "|C190|"]
+    faltantes = []
+    
+    for registro in registros_obrigatorios:
+        if not any(linha.startswith(registro) for linha in linhas):
+            faltantes.append(registro.replace("|", ""))
 
-        return True
+    if faltantes:
+        raise ValueError(
+            f"Registros obrigatórios faltando: {', '.join(faltantes)}"
+        )
 
+    return True

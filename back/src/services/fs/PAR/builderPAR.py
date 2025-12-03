@@ -25,8 +25,11 @@ def builderPAR(dados: dict) -> str:
 
     # Dados fiscais
     suframa = validacaoText(dados.get("suframa"), 14)
-    cod_pais = digitos(dados.get("cod_pais")) or "1058"
-    cod_pais = cod_pais[:4]
+    cod_pais_raw = digitos(dados.get("cod_pais")) or "1058"
+    cod_pais = cod_pais_raw.lstrip("0") if cod_pais_raw else "1058"
+    cod_pais = cod_pais[:4] if len(cod_pais) > 4 else cod_pais
+    if not cod_pais or cod_pais == "":
+        cod_pais = "1058"
     exterior = "S" if cod_pais != "1058" else "N"
     ind_icms = "1" if ie and any(c.isdigit() for c in ie) else "3"
 
@@ -38,6 +41,20 @@ def builderPAR(dados: dict) -> str:
     else:
         situacao_trib = "0"
 
+    numero_raw = dados.get("num")
+    if numero_raw is not None:
+        numero_str = str(numero_raw).strip()
+        # Se contém 'sn', 'SN', 'S/N', etc, retorna vazio
+        if numero_str.lower().replace("/", "").replace("-", "") == "sn":
+            numero = ""
+        # Se contém qualquer caractere não numérico, retorna vazio
+        elif not numero_str.isdigit():
+            numero = ""
+        else:
+            numero = numero_str[:6]
+    else:
+        numero = ""
+        
     campos = [
         tipo,                       # 1
         cod_part,                   # 2

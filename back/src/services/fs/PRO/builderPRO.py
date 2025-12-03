@@ -53,18 +53,18 @@ def builderPRO(produto_data: Dict[str, Any]) -> str:
     campos[33] = ""                                 # 34. Indicador Especial de Incentivo
     campos[34] = ""                                 # 35. Percentual da CSL
     campos[35] = ""                                 # 36. Percentual do IRPJ
-    campos[36] = "N"                                # 37. Alíq. ICMS Interna
-    campos[37] = ""                                 # 38. Códigos da Receita (Produto Específico)
+    campos[36] = ""                                 # 37. Alíq. ICMS Interna
+    campos[37] = "N"                                # 38. Códigos da Receita (Produto Específico)
     campos[38] = ""                                 # 39. Cód. Receita COFINS
     campos[39] = ""                                 # 40. Cód. Receita PIS
     campos[40] = cest[:7]                           # 41. Cód. CEST
-    campos[41] = "N"                                 # 42. Custo de Aquisição
+    campos[41] = ""                                 # 42. Custo de Aquisição
     campos[42] = "N"                                # 43. Substituição de ICMS
     campos[43] = "N"                                # 44. Substituição de IPI
     campos[44] = "N"                                # 45. Substituição de COFINS
     campos[45] = "N"                                # 46. Substituição de PIS/PASEP
     campos[46] = "N"                                # 47. Tributação Monofásica de COFINS
-    campos[47] = ""                                # 48. Tributação Monofásica de PIS
+    campos[47] = ""                                 # 48. Tributação Monofásica de PIS
     campos[48] = ""                                 # 49. Apuração do PIS/COFINS
     campos[49] = ""                                 # 50. Cód. Receita Retido COFINS
     campos[50] = ""                                 # 51. Cód. Receita Retido PIS
@@ -73,4 +73,4 @@ def builderPRO(produto_data: Dict[str, Any]) -> str:
     campos[53] = ""                                 # 54. Cód. Receita Retido COSIRF
     campos[54] = "N"                                # 55. Decreto 20.686/99 (AM)
 
-    return "|".join(campos) + "|"
+    return "|".join(campos)

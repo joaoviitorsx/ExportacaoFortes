@@ -1,6 +1,7 @@
 import os
 import asyncio
 import flet as ft
+import threading
 
 from ..components.card import Card
 from ..routes.fsRoute import FsRoute
@@ -10,7 +11,7 @@ from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
 
 def MainView(page: ft.Page, id: int, nome_empresa: str):
-    page.title = "Exportação SPED → Fortes Fiscal"
+    #page.title = "Exportação SPED → Fortes Fiscal"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#F5F6FA"
@@ -66,25 +67,26 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         btnProcessar.disabled = True
         uploaderCard.disableRefresh()
         uploaderCard.showProgress(True)
-        uploaderCard.updateProgress(15, "Iniciando processamento...")
         page.update()
+        
+        def atualizar_progresso(percent: int, mensagem: str):
+            try:
+                uploaderCard.updateProgress(percent, mensagem)
+                page.update()  # Força atualização da página
+            except Exception as e:
+                print(f"[ERRO] Falha ao atualizar progresso: {e}")
 
-        async def executarProcessamento():
+        def executarThread():
             nonlocal processado_ok
             try:
                 resposta = FsRoute.processarFs(
                     empresa_id=id,
                     arquivos=selected_files,
                     output_path=None,
+                    progress_callback=atualizar_progresso
                 )
-                await asyncio.sleep(0.5)
 
                 if resposta["status"] == "ok":
-                    for etapa in resposta.get("etapas", []):
-                        uploaderCard.updateProgress(etapa["percent"], etapa["mensagem"])
-                        await asyncio.sleep(0.1)
-                        page.update()
-                    
                     btnDownload.visible = True
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Novamente"
@@ -92,17 +94,18 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
                     processado_ok = True
                     notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
                 else:
-                    uploaderCard.updateProgress(0, "Erro no processamento")
-                    notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
-                    resetarView()
+                    uploaderCard.showProgress(False)
+                    uploaderCard.showFiles()
+                    notificacao(page, "Erro de Validação", resposta["mensagem"], tipo="erro")
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Arquivo"
                     btnProcessar.icon = ft.Icons.PLAY_ARROW
                     processado_ok = False
 
             except Exception as e:
+                uploaderCard.showProgress(False)
+                uploaderCard.showFiles()
                 notificacao(page, "Erro", f"Erro inesperado: {str(e)}", tipo="erro")
-                resetarView()
                 btnProcessar.disabled = False
                 btnProcessar.text = "Processar Arquivo"
                 btnProcessar.icon = ft.Icons.PLAY_ARROW
@@ -111,7 +114,8 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
             finally:
                 page.update()
 
-        page.run_task(executarProcessamento)
+        thread = threading.Thread(target=executarThread, daemon=True)
+        thread.start()
 
     def escolherLocal(e):
         nonlocal processado_ok
@@ -137,23 +141,33 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
             notificacao(page, "Gerando arquivo", "O arquivo está sendo gerado...", tipo="info")
             page.update()
             
-            resposta = FsRoute.baixarFs(
-                empresa_id=id,
-                arquivos=selected_files,
-                output_path=result.path,
-            )
+            def executarDownload():
+                try:
+                    resposta = FsRoute.baixarFs(
+                        empresa_id=id,
+                        arquivos=selected_files,
+                        output_path=result.path,
+                        progress_callback=None
+                    )
 
-            if resposta["status"] == "ok":
-                uploaderCard.finishDownloadProgress()
-                notificacao(page, "Download pronto!", f"Arquivo salvo em {result.path}", tipo="sucesso")
-            else:
-                uploaderCard.showDownloadProgress(False)
-                notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+                    if resposta["status"] == "ok":
+                        uploaderCard.finishDownloadProgress()
+                        notificacao(page, "Download pronto!", f"Arquivo salvo em {result.path}", tipo="sucesso")
+                    else:
+                        uploaderCard.showDownloadProgress(False)
+                        notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+                except Exception as e:
+                    uploaderCard.showDownloadProgress(False)
+                    notificacao(page, "Erro", f"Erro ao gerar arquivo: {str(e)}", tipo="erro")
+                
+                page.update()
+            
+            thread = threading.Thread(target=executarDownload, daemon=True)
+            thread.start()
         else:
             uploaderCard.showDownloadProgress(False)
             notificacao(page, "Cancelado", "Download cancelado pelo usuário", tipo="info")
-
-        page.update()
+            page.update()
 
     card_empresa = Card(
         title=None,
@@ -185,18 +199,18 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
             Header(),
             card_empresa,
             uploaderCard,
-             ft.Row(
+            ft.Row(
                 [btnProcessar, btnDownload],
                 spacing=20,
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             Header.footer(),
-            ],
-            spacing=17,
-            expand=True,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            scroll=ft.ScrollMode.AUTO,
-        )
+        ],
+        spacing=17,
+        expand=True,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        scroll=ft.ScrollMode.AUTO,
+    )
     
     return ft.View(
         route=f"/main?empresa={id}",

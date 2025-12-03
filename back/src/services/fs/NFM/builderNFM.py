@@ -96,4 +96,4 @@ def builderNFM(dados: Dict[str, Any]) -> str:
     campos[89] = formatarValor(dados.get("vl_fcp_st_total"))          # 90 - Total do FCP Substituição (Vem da query agregada)
     campos[90] = "N"                                                  # 91 - NF-e Saída de Terceiros (Default 'N')
 
-    return "|".join(campos) + "|"
+    return "|".join(campos)

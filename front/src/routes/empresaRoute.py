@@ -21,6 +21,7 @@ class EmpresaRoute:
                 cnpjLimpo,
                 dados["uf"],
                 dados["simples"],
+                dados.get("aliq_espec", 0)
             )
         except Exception as e:
             print(f"[ERRO] Falha ao cadastrar empresa: {e}")

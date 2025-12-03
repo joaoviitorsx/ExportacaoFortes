@@ -1,22 +1,15 @@
-from sqlalchemy import text
 from ....services.fs.CAB.builderCAB import builderCAB
+from ....repositories.camposRepo.cab_repository import CabRepository
 
 class ExportarCAB:
     def __init__(self, session):
+
         self.session = session
+        self.repo = CabRepository(session)
 
     def gerar(self, empresa_id: int) -> str:
-        # Buscar empresa
-        empresa = self.session.execute(
-            text("SELECT razao_social, aliq_espec FROM empresas WHERE id = :id"),
-            {"id": empresa_id}
-        ).mappings().first()
-
-        # Buscar registro 0000
-        registro_0000 = self.session.execute(
-            text("SELECT dt_ini, dt_fin, periodo FROM registro_0000 WHERE empresa_id = :id AND ativo = 1 LIMIT 1"),
-            {"id": empresa_id}
-        ).mappings().first()
+        empresa = self.repo.get_empresa(empresa_id)
+        registro_0000 = self.repo.get_registro0000(empresa_id)
 
         if not empresa or not registro_0000:
             raise ValueError("Dados insuficientes para gerar CAB")

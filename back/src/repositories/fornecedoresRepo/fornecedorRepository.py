@@ -1,9 +1,9 @@
 import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 LOTE = 50
-
 
 class FornecedorRepository:
     def __init__(self, db_session: Session):
@@ -24,7 +24,6 @@ class FornecedorRepository:
             df = pd.read_sql(query, self.db.bind, params={"empresa_id": empresa_id})
             return df if not df.empty else pd.DataFrame(columns=["cod_part", "nome", "cnpj"])
         except Exception:
-            # Em caso de falha no SELECT, não interrompe o fluxo
             return pd.DataFrame(columns=["cod_part", "nome", "cnpj"])
 
     def inserirFornecedores(self, empresa_id: int, df: pd.DataFrame) -> int:
@@ -33,6 +32,7 @@ class FornecedorRepository:
 
         df = df.copy()
         df["empresa_id"] = empresa_id
+        df["cod_part"] = df["cod_part"].astype(str).str.strip()
         df["uf"] = ""
         df["cnae"] = ""
         df["decreto"] = ""
@@ -41,19 +41,39 @@ class FornecedorRepository:
         colunas = ["empresa_id", "cod_part", "nome", "cnpj", "uf", "cnae", "decreto", "simples"]
         df = df[colunas]
 
+        # Usar INSERT IGNORE para pular duplicatas silenciosamente
+        stmt = text("""
+            INSERT IGNORE INTO fornecedores (empresa_id, cod_part, nome, cnpj, uf, cnae, decreto, simples)
+            VALUES (:empresa_id, :cod_part, :nome, :cnpj, :uf, :cnae, :decreto, :simples)
+        """)
+
         try:
-            df.to_sql(
-                name="fornecedores",
-                con=self.db.bind,
-                if_exists="append",
-                index=False,
-                method="multi",
-                chunksize=1000
-            )
+            dados = df.to_dict(orient="records")
+            
+            inseridos = 0
+            for registro in dados:
+                try:
+                    result = self.db.execute(stmt, registro)
+                    # rowcount = 1 se inseriu, 0 se foi ignorado (duplicata)
+                    if result.rowcount > 0:
+                        inseridos += 1
+                except IntegrityError:
+                    # Se mesmo com INSERT IGNORE houver erro, apenas pula
+                    continue
+            
             self.db.commit()
-            return len(df)
-        except Exception:
+            
+            total_registros = len(dados)
+            ignorados = total_registros - inseridos
+            
+            if ignorados > 0:
+                print(f"[INFO] {inseridos} fornecedores inseridos, {ignorados} duplicados ignorados")
+            
+            return inseridos
+            
+        except Exception as e:
             self.db.rollback()
+            print(f"[ERRO] Falha ao inserir fornecedores: {e}")
             raise
 
     def cnpjsPendentes(self, empresa_id: int) -> list[str]:
@@ -91,27 +111,37 @@ class FornecedorRepository:
         """)
 
         try:
+            batch_params = []
             for cnpj in lote_cnpjs:
                 dados = resultados.get(cnpj)
                 if not dados:
                     continue
 
                 razao_social, cnae, uf, simples, decreto = dados
+                
+                # Garante que CNAE seja string e preserve zeros à esquerda
+                cnae_str = str(cnae).zfill(7) if cnae and str(cnae).strip() else ""
+                
                 params = {
                     "empresa_id": empresa_id,
                     "cnpj": cnpj,
-                    "cnae": cnae or "",
+                    "cnae": cnae_str,
                     "uf": uf or "",
                     "simples": str(simples or "False"),
                     "decreto": str(decreto or "False")
                 }
+                
+                batch_params.append(params)
 
-                self.db.execute(stmt, params)
-                atualizados += 1
+            # Executar em batch
+            if batch_params:
+                result = self.db.execute(stmt, batch_params)
+                atualizados = result.rowcount if hasattr(result, 'rowcount') else len(batch_params)
+                self.db.commit()
 
-            self.db.commit()
             return atualizados
 
-        except Exception:
+        except Exception as e:
             self.db.rollback()
+            print(f"[ERRO] Falha ao atualizar fornecedores: {e}")
             raise

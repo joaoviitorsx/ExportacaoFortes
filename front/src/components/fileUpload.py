@@ -87,25 +87,28 @@ class UploadCard(Card):
     def __init__(self, on_file_selected=None):
         self.on_file_selected = on_file_selected
         self.selected_files = []
-        self.selected_path = []
+        self.selected_paths = []
         self.files_card = None
 
         self.file_picker = ft.FilePicker(on_result=self.filesPicked)
         self.upload_area = UploadArea(self._pick_files)
+        
         self.progress = ProgressBar()
-        self.progress.visible = False
-
         self.download_progress = DownloadProgressBar()
-        self.download_progress.visible = False
 
-        self.content_column = ft.Column(
+        self.main_content = ft.Column(
             [
                 ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
                 ft.Text("Selecione um arquivo .txt do SPED para processamento", size=13, color=ft.Colors.GREY_600),
                 self.upload_area,
+            ],
+            spacing=12,
+        )
+
+        self.content_column = ft.Column(
+            [
+                self.main_content,
                 self.file_picker,
-                self.progress,
-                self.download_progress,
             ],
             spacing=12,
         )
@@ -135,40 +138,72 @@ class UploadCard(Card):
 
     def showFiles(self):
         self.files_card = SelectedFilesCard(self.selected_files, self.showUpload)
-        self.content_column.controls[2] = self.files_card
+        self.main_content.controls = [
+            ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
+            ft.Text("Arquivos selecionados com sucesso", size=13, color=ft.Colors.GREY_600),
+            self.files_card,
+        ]
         self.update()
 
     def disableRefresh(self):
         if self.files_card and self.files_card.refreshButton:
             self.files_card.refreshButton.disabled = True
             self.files_card.refreshButton.visible = False
-            self.files_card.refreshButton.update()
+            self.update()
 
     def showUpload(self, _=None):
         self.selected_files = []
-        self.content_column.controls[2] = self.upload_area
+        self.selected_paths = []
+        self.main_content.controls = [
+            ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
+            ft.Text("Selecione um arquivo .txt do SPED para processamento", size=13, color=ft.Colors.GREY_600),
+            self.upload_area,
+        ]
         self.update()
 
     def showProgress(self, visible=True):
-        self.progress.visible = visible
-        self.update()
+        if visible:
+            self.progress = ProgressBar()
+            self.main_content.controls = [
+                ft.Text("Processando Arquivo", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
+                ft.Text("Aguarde enquanto processamos o arquivo SPED", size=13, color=ft.Colors.GREY_600),
+                self.progress,
+            ]
+            # Atualiza o card pai, não o progress bar diretamente
+            self.update()
 
     def updateProgress(self, percent: int, message: str):
-        self.progress.set_progress(percent, message)
-        self.showProgress(True)
-        self.update()
+        if self.progress:
+            self.progress.bar.value = percent / 100
+            self.progress.status.value = f"{message} ({percent}%)"
+            # Atualiza o card pai
+            self.update()
 
     def showDownloadProgress(self, visible=True):
-        self.download_progress.visible = visible
         if visible:
-            self.download_progress.start()
-        self.update()
+            self.download_progress = DownloadProgressBar()
+            self.download_progress.start()  # Inicia o loading infinito
+            self.main_content.controls = [
+                ft.Text("Gerando Arquivo .fs", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
+                ft.Text("Aguarde enquanto geramos o arquivo para download", size=13, color=ft.Colors.GREY_600),
+                self.download_progress,
+            ]
+            # Atualiza o card pai
+            self.update()
+        else:
+            # Volta para a tela anterior
+            if self.files_card:
+                self.showFiles()
+            else:
+                self.showUpload()
 
     def updateDownloadProgress(self, percent: int, message: str):
-        self.download_progress.set_progress(percent, message)
-        self.showDownloadProgress(True)
-        self.update()
+        if self.download_progress:
+            # Mantém a barra indeterminada, só atualiza a mensagem
+            self.download_progress.status.value = message
+            self.update()
 
     def finishDownloadProgress(self):
-        self.download_progress.finish()
-        self.update()
+        if self.download_progress:
+            self.download_progress.finish()
+            self.update()
