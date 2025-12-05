@@ -5,7 +5,7 @@ class EmpresaRepository:
         self.session = session
 
     def getID(self, empresa_id: int):
-        query = text("SELECT id, cnpj, razao_social FROM empresas WHERE id = :id")
+        query = text("SELECT id, cnpj, razao_social, cnpj_matriz FROM empresas WHERE id = :id")
         return self.session.execute(query, {"id": empresa_id}).mappings().first()
 
     def getCnpj(self, cnpj: str):

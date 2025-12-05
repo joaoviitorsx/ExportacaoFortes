@@ -16,12 +16,19 @@ class EmpresaRoute:
         try:
             controller = EmpresaController()
             cnpjLimpo = removedorCaracteres(dados["cnpj"])
+            cnpjMatrizLimpo = None
+            
+            # Se tiver cnpj_matriz, limpar também
+            if dados.get("cnpj_matriz"):
+                cnpjMatrizLimpo = removedorCaracteres(dados["cnpj_matriz"])
+            
             return controller.cadastrarEmpresas(
                 dados["razao_social"],
                 cnpjLimpo,
                 dados["uf"],
                 dados["simples"],
-                dados.get("aliq_espec", 0)
+                dados.get("aliq_espec", 0),
+                cnpjMatrizLimpo
             )
         except Exception as e:
             print(f"[ERRO] Falha ao cadastrar empresa: {e}")

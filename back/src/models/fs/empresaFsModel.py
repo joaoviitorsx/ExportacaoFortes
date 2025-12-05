@@ -9,3 +9,4 @@ class EmpresaFsModel(Base):
     razao_social = Column(String(100), nullable=False)
     uf = Column(String(2), nullable=False)
     simples = Column(Boolean, nullable=True)
+    cnpj_matriz = Column(CHAR(14), nullable=True, index=True)

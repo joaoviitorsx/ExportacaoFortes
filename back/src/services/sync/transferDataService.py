@@ -18,20 +18,30 @@ class TransferDataService:
             return
 
         cnpj = empresaDestino["cnpj"]
+        cnpj_matriz = empresaDestino.get("cnpj_matriz")
         empresaIdExport = empresaDestino["id"]
 
         print(f"[INFO] Empresa destino: {empresaDestino['razao_social']} ({cnpj})")
 
-        # 2. Mapear para empresa no ICMS
-        empresaOrigem = self.repoEmpresaIcms.getCnpj(cnpj)
+        # 2. Determinar qual CNPJ usar para buscar produtos
+        # Se a empresa é filial (tem cnpj_matriz), busca produtos da matriz
+        cnpj_busca = cnpj_matriz if cnpj_matriz else cnpj
+        
+        if cnpj_matriz:
+            print(f"[INFO] Empresa é filial. Buscando produtos da matriz: {cnpj_matriz}")
+        else:
+            print(f"[INFO] Empresa é matriz. Buscando produtos próprios.")
+
+        # 3. Mapear para empresa no ICMS usando o CNPJ correto
+        empresaOrigem = self.repoEmpresaIcms.getCnpj(cnpj_busca)
         if not empresaOrigem:
-            print("[ERRO] Empresa não encontrada no apuradoricms.")
+            print(f"[ERRO] Empresa com CNPJ {cnpj_busca} não encontrada no apuradoricms.")
             return
 
         empresa_id_icms = empresaOrigem["id"]
         print(f"[INFO] Empresa origem encontrada com ID: {empresa_id_icms}")
 
-        # 3. Buscar produtos do ICMS
+        # 4. Buscar produtos do ICMS
         df = self.repoProdutoIcms.getEmpresa(empresa_id_icms)
         if df.empty:
             print("[INFO] Nenhum produto encontrado para transferir.")
@@ -44,8 +54,12 @@ class TransferDataService:
             print("[ERRO] Nenhum dado válido para transferir após validação.")
             return
         
-        # 4. Ajustar para salvar no exportacao
+        # 5. Ajustar para salvar no exportacao
         df["empresa_id"] = empresaIdExport
         self.repoProdutoExport.inserirDados(dfValidado, empresaIdExport)
 
-        print(f"[SUCESSO] {len(df)} produtos transferidos para empresa {empresaDestino['razao_social']}.")
+        if cnpj_matriz:
+            print(f"[SUCESSO] {len(df)} produtos da matriz transferidos para filial {empresaDestino['razao_social']}.")
+        else:
+            print(f"[SUCESSO] {len(df)} produtos transferidos para empresa {empresaDestino['razao_social']}.")
+

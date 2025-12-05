@@ -9,10 +9,15 @@ CREATE TABLE IF NOT EXISTS empresas (
 	uf varchar(2) not null,
     simples boolean,
     aliq_espec boolean default false,
-    UNIQUE KEY unq_cnpj (cnpj)
+    cnpj_matriz CHAR(14) NULL,
+    UNIQUE KEY unq_cnpj (cnpj),
+    INDEX idx_cnpj_matriz (cnpj_matriz)
 );
 
 alter table empresas add column aliq_espec boolean default false;
+-- Adicionar coluna cnpj_matriz para empresas filiais
+ALTER TABLE empresas ADD COLUMN IF NOT EXISTS cnpj_matriz CHAR(14) NULL;
+ALTER TABLE empresas ADD INDEX IF NOT EXISTS idx_cnpj_matriz (cnpj_matriz);
 select * from empresas;
 
 -- Registro 0000
