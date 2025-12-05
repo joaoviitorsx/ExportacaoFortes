@@ -17,7 +17,13 @@ def EmpresaView(page: ft.Page) -> ft.View:
     dropdown = ft.Dropdown(
         label="Empresas cadastradas",
         hint_text="Selecione uma empresa",
-        options=[ft.dropdown.Option(str(e["id"]), e["razao_social"]) for e in empresas],
+        options=[
+            ft.dropdown.Option(
+                str(e["id"]),
+                f'{e["razao_social"]} - {e["cnpj"]}',
+                e["cnpj"]
+            ) for e in empresas
+        ],
         width=350,
         border_radius=12,
         border_color=ft.Colors.GREY_400,
@@ -36,11 +42,12 @@ def EmpresaView(page: ft.Page) -> ft.View:
         if dropdown.value:
             empresa_id = int(dropdown.value)
             razao_social = ""
+            cnpj = ""
             for opt in dropdown.options:
                 if opt.key == dropdown.value:
                     razao_social = opt.text
                     break
-            page.go(f"/main?empresa={empresa_id}&nome={razao_social.replace(' ', '%20')}")
+            page.go(f"/main?empresa={empresa_id}&nome={razao_social.replace(' ', '%20')}&cnpj={cnpj}")
 
     def cadastrar(e):
         page.go("/cadastro")

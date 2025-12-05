@@ -23,12 +23,6 @@ def CadastroView(page: ft.Page) -> ft.View:
         fill_color=ft.Colors.WHITE,
     )
 
-    aliquota_checkbox = ft.Checkbox(
-        label="Empresa com alíquota específica?",
-        value=False,
-        visible=False,
-    )
-
     def formataInput(e):
         valor = cnpj_input.value or ""
         cnpj_input.value = formatarCnpj(valor)
@@ -63,8 +57,6 @@ def CadastroView(page: ft.Page) -> ft.View:
         info_card.content = None
         btn_salvar.disabled = True
         btn_salvar.bgcolor = ft.Colors.GREY_400
-        aliquota_checkbox.visible = False
-        aliquota_checkbox.value = False
         page.update()
 
         if not cnpj:
@@ -101,7 +93,6 @@ def CadastroView(page: ft.Page) -> ft.View:
                     horizontal_alignment=ft.CrossAxisAlignment.START,
                 )
                 info_card.visible = True
-                aliquota_checkbox.visible = True
                 btn_salvar.disabled = False
                 btn_salvar.bgcolor = ft.Colors.GREEN_600
                 notificacao(page, "Sucesso", "Dados encontrados!", tipo="sucesso")
@@ -116,15 +107,12 @@ def CadastroView(page: ft.Page) -> ft.View:
             notificacao(page, "Erro", "Nenhuma empresa carregada.", tipo="erro")
             return
 
-        empresa_dados['aliq_espec'] = 1 if aliquota_checkbox.value else 0
         try:
             resultado = EmpresaRoute.cadastrarEmpresa(empresa_dados)
             if resultado and resultado.get("status") == "erro":
                 notificacao(page, "Info", resultado.get("mensagem", "Empresa já cadastrada."), tipo="info")
             elif resultado and resultado.get("status") == "ok":
                 msg = "Empresa cadastrada com sucesso!"
-                if aliquota_checkbox.value:
-                    msg += " (Com alíquota específica)"
                 notificacao(page, "Sucesso", msg, tipo="sucesso")
                 page.go("/")
             else:
@@ -173,16 +161,6 @@ def CadastroView(page: ft.Page) -> ft.View:
                 [
                     ft.Column(
                         [info_card],
-                        col={"xs": 12, "sm": 12, "md": 12, "lg": 12, "xl": 12},
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    )
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            ft.ResponsiveRow(
-                [
-                    ft.Column(
-                        [aliquota_checkbox],
                         col={"xs": 12, "sm": 12, "md": 12, "lg": 12, "xl": 12},
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     )

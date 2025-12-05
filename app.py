@@ -33,6 +33,7 @@ def main(page: ft.Page):
         elif page.route.startswith("/main"):
             empresa_id = None
             nome_empresa = ""
+            empresa_cnpj = ""
             if "?empresa=" in page.route:
                 params = page.route.split("?")[1]
                 for param in params.split("&"):
@@ -41,7 +42,7 @@ def main(page: ft.Page):
                     elif param.startswith("nome="):
                         nome_empresa = param.split("=")[1].replace("%20", " ")
             if empresa_id is not None:
-                page.views.append(MainView(page, empresa_id, nome_empresa))
+                page.views.append(MainView(page, empresa_id, nome_empresa, empresa_cnpj))
             else:
                 page.go("/")
 

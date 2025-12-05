@@ -10,7 +10,7 @@ from ..components.fileUpload import UploadCard
 from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
 
-def MainView(page: ft.Page, id: int, nome_empresa: str):
+def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft.View:
     #page.title = "Exportação SPED → Fortes Fiscal"
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -173,12 +173,20 @@ def MainView(page: ft.Page, id: int, nome_empresa: str):
         title=None,
         content=ft.Row(
             [
-                ft.Text(f"Empresa: ", size=13, color=ft.Colors.GREY_700),
-                ft.Text(f"{nome_empresa}", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
                 ft.Text(f"(ID: {id})", size=12, color=ft.Colors.GREY_500),
+                ft.Text(f"Empresa: ", size=13, color=ft.Colors.GREY_700),
+                ft.Text(
+                    f"{nome_empresa}",
+                    size=13,
+                    weight=ft.FontWeight.BOLD,
+                    color=ft.Colors.BLUE_700,
+                    expand=True               
+                ),
             ],
             spacing=8,
             alignment=ft.MainAxisAlignment.START,
+            run_spacing=2,                   
+            expand=True                      
         ),
         icon=None,
         height=None,
