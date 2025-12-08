@@ -3,7 +3,7 @@ from ....utils.fsFormat import formatarValor, tributacaoICMS
 
 def builderPNM(dados: Dict[str, Any]) -> str:
     cst_icms = str(dados.get("cst_icms") or "").zfill(3)
-    csta = cst_icms[1:] if len(cst_icms) == 3 else ''
+    csta = cst_icms[0] if len(cst_icms) == 3 else ''
     cstb = cst_icms[1:] if len(cst_icms) == 3 else ''
     
     is_simples = csta in ['1', '2', '3', '4', '5', '9']
