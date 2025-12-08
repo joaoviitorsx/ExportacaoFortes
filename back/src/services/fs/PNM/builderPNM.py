@@ -9,8 +9,10 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     is_simples = csta in ['1', '2', '3', '4', '5', '9']
     csosn = cst_icms if is_simples else ''
     
-    csta_final = "" if is_simples else csta
-    cstb_final = "" if is_simples else cstb
+    # CORREÇÃO: Manter CSTA e CSTB mesmo para Simples Nacional
+    # Exemplo: CST 560 → csta=5, cstb=60 (não zerar)
+    csta_final = csta
+    cstb_final = cstb
 
     # Converter CSTB "00" para "90"
     # Regra de negócio PNM:

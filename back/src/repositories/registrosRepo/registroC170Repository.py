@@ -63,6 +63,8 @@ class RegistroC170Repository:
                     'ativo': 1
                 })
 
+                print(f"[DEBUG C170] Inseridos no cst_icms: {item.get('cst_icms', '')} ")
+
             query = text("""
                 INSERT INTO registro_c170 (
                     c100_id, doc_key, empresa_id, periodo, reg, num_item, cod_item, descr_compl,
