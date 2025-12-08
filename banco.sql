@@ -1,24 +1,21 @@
 CREATE DATABASE IF NOT EXISTS exportacaofortes;
 USE exportacaofortes;
 
--- Tabela de empresas
+-- Tabela de empresas (Nova arquitetura matriz/filial automática)
 CREATE TABLE IF NOT EXISTS empresas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cnpj CHAR(14) NOT NULL,
     razao_social VARCHAR(100) NOT NULL,
-	uf varchar(2) not null,
-    simples boolean,
-    aliq_espec boolean default false,
-    cnpj_matriz CHAR(14) NULL,
+    uf VARCHAR(2) NOT NULL,
+    simples BOOLEAN,
+    cnpj_raiz CHAR(8) NOT NULL,
+    is_matriz BOOLEAN DEFAULT 0,
+    matriz_id INT NULL,
     UNIQUE KEY unq_cnpj (cnpj),
-    INDEX idx_cnpj_matriz (cnpj_matriz)
+    INDEX idx_cnpj_raiz (cnpj_raiz),
+    INDEX idx_matriz_id (matriz_id),
+    CONSTRAINT fk_matriz FOREIGN KEY (matriz_id) REFERENCES empresas(id) ON DELETE SET NULL
 );
-
-alter table empresas add column aliq_espec boolean default false;
--- Adicionar coluna cnpj_matriz para empresas filiais
-ALTER TABLE empresas ADD COLUMN IF NOT EXISTS cnpj_matriz CHAR(14) NULL;
-ALTER TABLE empresas ADD INDEX IF NOT EXISTS idx_cnpj_matriz (cnpj_matriz);
-select * from empresas;
 
 -- Registro 0000
 CREATE TABLE IF NOT EXISTS registro_0000 (

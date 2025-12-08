@@ -5,11 +5,26 @@ class EmpresaRepository:
         self.session = session
 
     def get_all(self):
-        sql = text("SELECT id, razao_social, cnpj, uf, simples, aliq_espec, cnpj_matriz FROM empresas")
+        sql = text("""
+            SELECT 
+                e.id, 
+                e.razao_social, 
+                e.cnpj, 
+                e.cnpj_raiz,
+                e.uf, 
+                e.simples, 
+                e.is_matriz,
+                e.matriz_id,
+                m.razao_social as matriz_razao_social,
+                m.cnpj as matriz_cnpj
+            FROM empresas e
+            LEFT JOIN empresas m ON e.matriz_id = m.id
+        """)
         result = self.session.execute(sql).mappings().all()
         return [dict(row) for row in result]
 
-    def insert(self, razao_social: str, cnpj: str, uf: str, simples: bool, aliq_espec: int = 0, cnpj_matriz: str = None):
+    def insert(self, razao_social: str, cnpj: str, uf: str, simples: bool):
+        # 1. Verificar se CNPJ já existe
         check_sql = text("SELECT id FROM empresas WHERE cnpj = :cnpj")
         exists = self.session.execute(check_sql, {"cnpj": cnpj}).first()
 
@@ -19,31 +34,58 @@ class EmpresaRepository:
                 "mensagem": "Empresa já cadastrada."
             }
 
-        # Validar se cnpj_matriz existe quando fornecido
-        if cnpj_matriz:
-            check_matriz = text("SELECT id FROM empresas WHERE cnpj = :cnpj_matriz")
-            matriz_exists = self.session.execute(check_matriz, {"cnpj_matriz": cnpj_matriz}).first()
-            
-            if not matriz_exists:
-                return {
-                    "status": "erro",
-                    "mensagem": "CNPJ da matriz não encontrado. Cadastre a matriz primeiro."
-                }
+        # 2. Extrair raiz do CNPJ
+        cnpj_raiz = cnpj[:8]
 
-        sql = text("""
-            INSERT INTO empresas (razao_social, cnpj, uf, simples, aliq_espec, cnpj_matriz)
-            VALUES (:razao_social, :cnpj, :uf, :simples, :aliq_espec, :cnpj_matriz)
+        # 3. Buscar matriz existente com a mesma raiz
+        matriz_sql = text("""
+            SELECT id FROM empresas 
+            WHERE cnpj_raiz = :cnpj_raiz AND is_matriz = 1
         """)
-        self.session.execute(sql, {
+        matriz = self.session.execute(matriz_sql, {"cnpj_raiz": cnpj_raiz}).first()
+
+        # 4. Determinar se é matriz ou filial
+        if matriz:
+            # É FILIAL - matriz já existe
+            is_matriz = False
+            matriz_id = matriz.id
+            tipo_msg = "filial"
+        else:
+            # É MATRIZ - primeira empresa dessa raiz
+            is_matriz = True
+            matriz_id = None  # Será atualizado após insert
+            tipo_msg = "matriz"
+
+        # 5. Inserir empresa
+        insert_sql = text("""
+            INSERT INTO empresas 
+            (razao_social, cnpj, cnpj_raiz, uf, simples, is_matriz, matriz_id)
+            VALUES 
+            (:razao_social, :cnpj, :cnpj_raiz, :uf, :simples, :is_matriz, :matriz_id)
+        """)
+        
+        result = self.session.execute(insert_sql, {
             "razao_social": razao_social,
             "cnpj": cnpj,
+            "cnpj_raiz": cnpj_raiz,
             "uf": uf,
             "simples": simples,
-            "aliq_espec": aliq_espec,
-            "cnpj_matriz": cnpj_matriz, 
+            "is_matriz": is_matriz,
+            "matriz_id": matriz_id
         })
+        
+        novo_id = result.lastrowid
+
+        # 6. Se for matriz, atualizar matriz_id para o próprio id
+        if is_matriz:
+            update_sql = text("UPDATE empresas SET matriz_id = :id WHERE id = :id")
+            self.session.execute(update_sql, {"id": novo_id})
 
         self.session.commit()
+
         return {
-            "status": "ok"
+            "status": "ok",
+            "tipo": tipo_msg,
+            "id": novo_id,
+            "mensagem": f"Empresa cadastrada como {tipo_msg.upper()}"
         }

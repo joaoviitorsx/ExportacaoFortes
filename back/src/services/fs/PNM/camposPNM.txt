@@ -124,3 +124,17 @@
     Decreto 20.686/99(AM)
 
 campos do PNM com seus 124 dados
+
+
+calculando icms normal/credito tem q retira pq empresas nao se aproveita
+exclui icms de base e 
+
+jm e atacado não trabalho apenas com 2 e 3 (tabela 13)
+campo 6 de 00 iria converter para 90 passar para o campo 11 passaria a ser 3, se tiver valores no 12, 13 e 83 desconsiderar  
+desconsiderar campos 11,12 e 83 apos a logica
+
+pnm campo 6 --> de 00 seria convertidos para 90 e aplicar a logica
+pnm --> 11 e 12 e 83
+
+
+campo 10 sped(cst_icms), verificar se esta coletando corretemente os cst_icms, aqueles que comecam com 1,2,3,4,5,6,7,8, todos tiver 00 no final pode considerar 90

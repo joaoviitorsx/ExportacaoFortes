@@ -23,44 +23,12 @@ def CadastroView(page: ft.Page) -> ft.View:
         fill_color=ft.Colors.WHITE,
     )
 
-    # Checkbox para indicar se é filial
-    is_filial_checkbox = ft.Checkbox(
-        label="Esta empresa é filial?",
-        value=False,
-    )
-
-    # Campo para CNPJ da matriz (inicialmente invisível)
-    cnpj_matriz_input = ft.TextField(
-        label="CNPJ da Matriz",
-        width=400,
-        height=50,
-        border_radius=12,
-        filled=True,
-        fill_color=ft.Colors.WHITE,
-        visible=False,
-        hint_text="Digite o CNPJ da empresa matriz"
-    )
-
     def formataInput(e):
         valor = cnpj_input.value or ""
         cnpj_input.value = formatarCnpj(valor)
         page.update()
 
-    def formataCnpjMatriz(e):
-        valor = cnpj_matriz_input.value or ""
-        cnpj_matriz_input.value = formatarCnpj(valor)
-        page.update()
-
-    def on_filial_change(e):
-        # Mostrar/ocultar campo de CNPJ da matriz
-        cnpj_matriz_input.visible = is_filial_checkbox.value
-        if not is_filial_checkbox.value:
-            cnpj_matriz_input.value = ""
-        page.update()
-
     cnpj_input.on_change = formataInput
-    cnpj_matriz_input.on_change = formataCnpjMatriz
-    is_filial_checkbox.on_change = on_filial_change
 
     btn_salvar = ActionButton(
         "Salvar", 
@@ -139,22 +107,13 @@ def CadastroView(page: ft.Page) -> ft.View:
             notificacao(page, "Erro", "Nenhuma empresa carregada.", tipo="erro")
             return
 
-        # Validar CNPJ da matriz se a empresa for filial
-        if is_filial_checkbox.value:
-            cnpj_matriz = cnpj_matriz_input.value.strip()
-            if not cnpj_matriz:
-                notificacao(page, "Erro", "Digite o CNPJ da matriz.", tipo="erro")
-                return
-            empresa_dados["cnpj_matriz"] = cnpj_matriz.replace(".", "").replace("/", "").replace("-", "")
-        else:
-            empresa_dados["cnpj_matriz"] = None
-
         try:
             resultado = EmpresaRoute.cadastrarEmpresa(empresa_dados)
             if resultado and resultado.get("status") == "erro":
                 notificacao(page, "Info", resultado.get("mensagem", "Empresa já cadastrada."), tipo="info")
             elif resultado and resultado.get("status") == "ok":
-                msg = "Empresa cadastrada com sucesso!"
+                tipo = resultado.get("tipo", "empresa")
+                msg = f"Empresa cadastrada como {tipo.upper()}!"
                 notificacao(page, "Sucesso", msg, tipo="sucesso")
                 page.go("/")
             else:
@@ -203,26 +162,6 @@ def CadastroView(page: ft.Page) -> ft.View:
                 [
                     ft.Column(
                         [info_card],
-                        col={"xs": 12, "sm": 12, "md": 12, "lg": 12, "xl": 12},
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    )
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            ft.ResponsiveRow(
-                [
-                    ft.Column(
-                        [is_filial_checkbox],
-                        col={"xs": 12, "sm": 12, "md": 12, "lg": 12, "xl": 12},
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    )
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            ft.ResponsiveRow(
-                [
-                    ft.Column(
-                        [cnpj_matriz_input],
                         col={"xs": 12, "sm": 12, "md": 12, "lg": 12, "xl": 12},
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     )

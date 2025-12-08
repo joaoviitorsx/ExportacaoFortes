@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from ...repositories.transferRepo.empresaRepository import EmpresaRepository
 from ...repositories.transferRepo.produtoRepository import ProdutoRepository
 from ...services.sync.validacaoTransferService import ValidacaoTransferService
@@ -18,21 +19,31 @@ class TransferDataService:
             return
 
         cnpj = empresaDestino["cnpj"]
-        cnpj_matriz = empresaDestino.get("cnpj_matriz")
+        is_matriz = empresaDestino.get("is_matriz", False)
+        matriz_id = empresaDestino.get("matriz_id")
         empresaIdExport = empresaDestino["id"]
 
         print(f"[INFO] Empresa destino: {empresaDestino['razao_social']} ({cnpj})")
 
-        # 2. Determinar qual CNPJ usar para buscar produtos
-        # Se a empresa é filial (tem cnpj_matriz), busca produtos da matriz
-        cnpj_busca = cnpj_matriz if cnpj_matriz else cnpj
-        
-        if cnpj_matriz:
-            print(f"[INFO] Empresa é filial. Buscando produtos da matriz: {cnpj_matriz}")
+        # 2. Determinar CNPJ para buscar produtos (sempre da matriz)
+        if is_matriz:
+            cnpj_busca = cnpj
+            print(f"[INFO] Empresa é MATRIZ. Buscando produtos próprios.")
         else:
-            print(f"[INFO] Empresa é matriz. Buscando produtos próprios.")
+            # Buscar CNPJ da matriz
+            matriz_sql = text("SELECT cnpj FROM empresas WHERE id = :matriz_id")
+            matriz_result = self.repoEmpresaExport.session.execute(
+                matriz_sql, {"matriz_id": matriz_id}
+            ).first()
+            
+            if not matriz_result:
+                print(f"[ERRO] Matriz não encontrada (ID: {matriz_id}).")
+                return
+            
+            cnpj_busca = matriz_result.cnpj
+            print(f"[INFO] Empresa é FILIAL. Buscando produtos da matriz: {cnpj_busca}")
 
-        # 3. Mapear para empresa no ICMS usando o CNPJ correto
+        # 3. Mapear para empresa no ICMS
         empresaOrigem = self.repoEmpresaIcms.getCnpj(cnpj_busca)
         if not empresaOrigem:
             print(f"[ERRO] Empresa com CNPJ {cnpj_busca} não encontrada no apuradoricms.")
@@ -49,17 +60,15 @@ class TransferDataService:
 
         print(f"[INFO] {len(df)} produtos encontrados.")
 
+        # 5. Validar dados
         dfValidado = self.validador.validar(df)
         if dfValidado.empty:
             print("[ERRO] Nenhum dado válido para transferir após validação.")
             return
         
-        # 5. Ajustar para salvar no exportacao
+        # 6. Sincronizar produtos (INSERT + UPDATE)
         df["empresa_id"] = empresaIdExport
         self.repoProdutoExport.inserirDados(dfValidado, empresaIdExport)
 
-        if cnpj_matriz:
-            print(f"[SUCESSO] {len(df)} produtos da matriz transferidos para filial {empresaDestino['razao_social']}.")
-        else:
-            print(f"[SUCESSO] {len(df)} produtos transferidos para empresa {empresaDestino['razao_social']}.")
-
+        tipo = "matriz" if is_matriz else "filial"
+        print(f"[SUCESSO] Produtos sincronizados para {tipo} {empresaDestino['razao_social']}.")

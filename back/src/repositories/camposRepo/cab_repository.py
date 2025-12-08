@@ -6,7 +6,7 @@ class CabRepository:
 
     def get_empresa(self, empresa_id: int):
         query = text("""
-            SELECT razao_social, aliq_espec
+            SELECT razao_social
             FROM empresas
             WHERE id = :id
         """)

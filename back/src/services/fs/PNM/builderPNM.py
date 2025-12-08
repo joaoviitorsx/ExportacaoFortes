@@ -3,7 +3,7 @@ from ....utils.fsFormat import formatarValor, tributacaoICMS
 
 def builderPNM(dados: Dict[str, Any]) -> str:
     cst_icms = str(dados.get("cst_icms") or "").zfill(3)
-    csta = cst_icms[0] if len(cst_icms) == 3 else ''
+    csta = cst_icms[1:] if len(cst_icms) == 3 else ''
     cstb = cst_icms[1:] if len(cst_icms) == 3 else ''
     
     is_simples = csta in ['1', '2', '3', '4', '5', '9']
@@ -11,6 +11,22 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     
     csta_final = "" if is_simples else csta
     cstb_final = "" if is_simples else cstb
+
+    # Converter CSTB "00" para "90"
+    # Regra de negócio PNM:
+    # - Se CST ICMS terminar com "00" (ex: 000, 200, 300) E não for Simples Nacional, converter CSTB para "90"
+    # - Para Simples Nacional (100, 200, 300, 400, 500, 900), CSTB permanece vazio
+    # - Quando converter para "90":
+    #   * Campo 11 (Tributação ICMS) = "3"
+    #   * Campo 12 (Base de Cálculo ICMS) = "" (zerado)
+    #   * Campo 13 (Alíquota ICMS) = "" (zerado)
+    #   * Campo 83 (Exclusão BC PIS/COFINS) = "" (zerado)
+    aplica_regra_90 = False
+    
+    # Verifica se cst_icms termina com "00" E não é Simples Nacional
+    if not is_simples and len(cst_icms) == 3 and cst_icms.endswith("00"):
+        cstb_final = "90"
+        aplica_regra_90 = True
 
     cst_cofins_raw = str(dados.get("cst_cofins", "")).strip()
     cst_pis_raw = str(dados.get("cst_pis", "")).strip()
@@ -83,6 +99,22 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         except (ValueError, AttributeError):
             campo_21 = ""
 
+    # Aplicar lógica dos campos 11, 12, 13 e 83 baseado na regra do CSTB
+    if aplica_regra_90:
+        # Quando CSTB foi convertido de "00" para "90":
+        # Campo 11 = "3"
+        # Campos 12, 13 e 83 = "" (zerados)
+        campo_11_tributacao = "3"
+        campo_12_bc_icms = ""
+        campo_13_aliq_icms = ""
+        campo_83_exclusao_bc = ""
+    else:
+        # Lógica normal
+        campo_11_tributacao = tributacaoICMS(cstb_final, dados.get("aliquota_cadastro"))
+        campo_12_bc_icms = formatarValor(dados.get("vl_bc_icms"))
+        campo_13_aliq_icms = formatarValor(dados.get("aliq_icms"))
+        campo_83_exclusao_bc = formatarValor(dados.get("vl_icms"))
+
     campos = [
         "PNM",                                               # 1. Tipo de registro
         str(dados.get("cod_item", ''))[:9],                  # 2. Produto
@@ -94,9 +126,9 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         formatarValor(dados.get("qtd"))[:5],                 # 8. Quantidade
         formatarValor(dados.get("vl_item")),                 # 9. Valor Bruto
         "",                                                  # 10. Valor do IPI (não contribuinte)
-        tributacaoICMS(cstb_final, dados.get("aliquota_cadastro")), # 11. Tributação ICMS
-        formatarValor(dados.get("vl_bc_icms")),              # 12. Base de Calculo do ICMS
-        formatarValor(dados.get("aliq_icms")),               # 13. Aliquota do ICMS
+        campo_11_tributacao,                                 # 11. Tributação ICMS
+        campo_12_bc_icms,                                    # 12. Base de Calculo do ICMS
+        campo_13_aliq_icms,                                  # 13. Aliquota do ICMS
         formatarValor(dados.get("vl_bc_icms_st")),           # 14. Base Calc. Subst. Tributaria
         formatarValor(dados.get("vl_icms_st")),              # 15. ICMS Substituição
         campo_16,                                            # 16. Tipo de Recolhimento
@@ -166,7 +198,7 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         "",                                                  # 80. Alíquota de Destino - Diferencial de Alíquotas
         "N",                                                 # 81. Calculo Fecop (Decreto 29.560/08)
         "",                                                  # 82. Aliq. Subst. (Decreto 29.560/08)
-        formatarValor(dados.get("vl_icms")),                 # 83. Exclusão da BC PIS/COFINS
+        campo_83_exclusao_bc,                                # 83. Exclusão da BC PIS/COFINS
         "",                                                  # 84. Aliquota de Credito
         "",                                                  # 85. Base de Calculo do FCP Normal
         "",                                                  # 86. Aliquota do FCP - Normal
