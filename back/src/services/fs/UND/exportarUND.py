@@ -1,27 +1,25 @@
-from sqlalchemy import text
 from ....services.fs.UND.builderUND import builderUND
+from ....repositories.camposRepo.und_repository import UndRepository
+
 
 class ExportarUND:
     def __init__(self, session):
         self.session = session
+        self.repo = UndRepository(session)
 
     def gerar(self, empresa_id: int) -> list[str]:
-        query = text("""
-            SELECT DISTINCT unid_inv
-            FROM registro_0200
-            WHERE empresa_id = :empresa_id
-              AND unid_inv IS NOT NULL
-              AND unid_inv != ''
-              AND ativo = 1
-        """)
-        
-        resultado = self.session.execute(query, {"empresa_id": empresa_id}).mappings().all()
+        unidades = self.repo.listar_unidades(empresa_id)
 
-        if not resultado:
+        if not unidades:
             return []
 
-        unidades_unicas = {item['unid_inv'] for item in resultado}
+        linhas = []
+        for u in unidades:
+            linhas.append(
+                builderUND(
+                    cod_unid=u["unid"],
+                    descr_unid=u["descr"]
+                )
+            )
 
-        linhas_und = [builderUND(unidade_sigla) for unidade_sigla in sorted(list(unidades_unicas))]
-        
-        return linhas_und
+        return linhas

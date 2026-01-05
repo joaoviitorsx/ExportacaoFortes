@@ -85,6 +85,18 @@ class PnmRepository:
         if not cods_unicos:
             return {}
 
+        # NOVO: Buscar matriz_id para usar na busca de produtos
+        # Se empresa for filial, busca produtos da matriz; senão, busca próprios
+        empresa_query = text("""
+            SELECT matriz_id FROM empresas WHERE id = :empresa_id
+        """)
+        empresa_result = self.session.execute(empresa_query, {"empresa_id": empresa_id}).first()
+        
+        # Se tem matriz_id diferente do próprio id, usar matriz_id; senão, usar próprio id
+        empresa_id_produtos = empresa_result[0] if empresa_result and empresa_result[0] and empresa_result[0] != empresa_id else empresa_id
+        
+        print(f"[DEBUG PNM] Buscando produtos: empresa_id={empresa_id}, matriz_id={empresa_id_produtos}")
+
         # Queries
         q0200 = text("""
             SELECT cod_item, descr_item, cod_barra, unid_inv, cod_ncm, 
@@ -105,13 +117,13 @@ class PnmRepository:
         map_prod: Dict[str, Dict[str, Any]] = {}
 
         for chunk in self.chunks(cods_unicos, self.chunk_size):
-            # Buscar registro_0200
+            # Buscar registro_0200 (sempre usa empresa_id original - dados da nota)
             rows_0200 = self.session.execute(q0200, {"empresa_id": empresa_id, "cods": chunk}).mappings().all()
             for r in rows_0200:
                 map_0200[r["cod_item"]] = dict(r)
 
-            # Buscar produtos
-            rows_prod = self.session.execute(qprod, {"empresa_id": empresa_id, "cods": chunk}).mappings().all()
+            # Buscar produtos (usa empresa_id_produtos - pode ser da matriz)
+            rows_prod = self.session.execute(qprod, {"empresa_id": empresa_id_produtos, "cods": chunk}).mappings().all()
             for r in rows_prod:
                 map_prod[r["cod_item"]] = dict(r)
 

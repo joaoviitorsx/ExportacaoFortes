@@ -11,21 +11,18 @@ class ExportarPRO:
 
     def gerar(self, empresa_id: int) -> list[str]:
         produtos = self.repo.get_produtos(empresa_id)
-
         if not produtos:
             return []
 
-        oum_map = self.exportar_oum.gerar(produtos)
+        oum_map = self.exportar_oum.gerar(produtos, empresa_id)
 
-        linhas_pro = []
-        
+        linhas = []
         for produto in produtos:
             cod_item = produto.get("cod_item")
-            
-            linha_pro = builderPRO(produto)
-            linhas_pro.append(linha_pro)
-            
+
+            linhas.append(builderPRO(produto))
+
             if cod_item in oum_map:
-                linhas_pro.extend(oum_map[cod_item])
-        
-        return linhas_pro
+                linhas.extend(oum_map[cod_item])
+
+        return linhas

@@ -66,9 +66,18 @@ class TransferDataService:
             print("[ERRO] Nenhum dado válido para transferir após validação.")
             return
         
-        # 6. Sincronizar produtos (INSERT + UPDATE)
-        df["empresa_id"] = empresaIdExport
-        self.repoProdutoExport.inserirDados(dfValidado, empresaIdExport)
+        # 6. Determinar empresa_id para gravar produtos
+        # REGRA: Filiais usam empresa_id da MATRIZ para compartilhar produtos
+        if is_matriz:
+            empresa_id_produtos = empresaIdExport  # Matriz usa próprio ID
+            print(f"[INFO] Gravando produtos com empresa_id da MATRIZ: {empresa_id_produtos}")
+        else:
+            empresa_id_produtos = matriz_id  # Filial usa ID da matriz
+            print(f"[INFO] Gravando produtos com empresa_id da MATRIZ (filial compartilha): {empresa_id_produtos}")
+        
+        # 7. Sincronizar produtos (INSERT + UPDATE)
+        dfValidado["empresa_id"] = empresa_id_produtos
+        self.repoProdutoExport.inserirDados(dfValidado, empresa_id_produtos)
 
         tipo = "matriz" if is_matriz else "filial"
         print(f"[SUCESSO] Produtos sincronizados para {tipo} {empresaDestino['razao_social']}.")

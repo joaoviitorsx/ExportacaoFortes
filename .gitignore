@@ -45,5 +45,7 @@ coverage/
 *.sln
 *.sw?
 
+*.txt
+
 venv/
 __pycache__/

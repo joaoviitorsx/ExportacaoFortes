@@ -1,12 +1,10 @@
-from ....utils.fsFormat import validacaoText, UNIDADES
+from ....utils.fsFormat import validacaoText
 
-def builderUND(unidade_sigla: str) -> str:
-    descricao = UNIDADES.get(unidade_sigla.upper(), unidade_sigla.upper())
-
+def builderUND(cod_unid: str, descr_unid: str) -> str:
     campos = [
         "UND",
-        validacaoText(unidade_sigla, 6),
-        validacaoText(descricao, 60)
+        validacaoText(cod_unid, 6),
+        validacaoText(descr_unid, 60),
     ]
 
-    return "|".join(map(str, campos))
+    return "|".join(campos) + "|"

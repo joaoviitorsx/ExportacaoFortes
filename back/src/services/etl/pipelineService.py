@@ -54,7 +54,12 @@ class PipelineService:
                 )
                 
                 # Salvar com feedback detalhado
-                self.salvarProgresso(dados, percent_base, percent_por_arquivo, idx, total_arquivos)
+                self.notificarProgresso(
+                    percent_base + int(percent_por_arquivo * 0.3),
+                    f"Persistindo dados do arquivo {idx}/{total_arquivos}..."
+                )
+
+                self.persistencia.salvar(dados)
                 
                 self.notificarProgresso(
                     percent_base + int(percent_por_arquivo),
@@ -97,7 +102,7 @@ class PipelineService:
         if not dados:
             return
         
-        tipos_registro = ['0000', '0150', '0190', '0200', '0210', 'C100', 'C170', 'C190', 'D100', 'E110']
+        tipos_registro = ['0000', '0150', '0190', '0200', '0220', '0221', 'C100', 'C170', 'C190']
         total_tipos = len([t for t in tipos_registro if t in dados])
         
         if total_tipos == 0:

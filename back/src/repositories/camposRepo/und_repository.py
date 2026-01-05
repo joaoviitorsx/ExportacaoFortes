@@ -1,17 +1,25 @@
 from typing import List, Dict
 from sqlalchemy import text
 
+
 class UndRepository:
     def __init__(self, session):
         self.session = session
 
-    def get_unidades(self, empresa_id: int) -> List[Dict[str, str]]:
+    def listar_unidades(self, empresa_id: int) -> List[Dict]:
         query = text("""
-            SELECT DISTINCT unid_inv
-            FROM registro_0200
+            SELECT DISTINCT
+                unid,
+                descr
+            FROM registro_0190
             WHERE empresa_id = :empresa_id
-              AND unid_inv IS NOT NULL
-              AND unid_inv != ''
-              AND ativo = 1
+              AND ativo = TRUE
+              AND unid IS NOT NULL
+              AND unid <> ''
         """)
-        return self.session.execute(query, {"empresa_id": empresa_id}).mappings().all()
+
+        rows = self.session.execute(
+            query, {"empresa_id": empresa_id}
+        ).mappings().all()
+
+        return [dict(r) for r in rows]

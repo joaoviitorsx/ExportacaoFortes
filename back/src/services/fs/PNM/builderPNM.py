@@ -110,6 +110,12 @@ def builderPNM(dados: Dict[str, Any]) -> str:
         campo_12_bc_icms = ""
         campo_13_aliq_icms = ""
         campo_83_exclusao_bc = ""
+    elif cstb_final in ('98'):
+        # CST 98: "Outros" sem base de cálculo nem alíquota
+        campo_11_tributacao = "3"
+        campo_12_bc_icms = ""
+        campo_13_aliq_icms = ""
+        campo_83_exclusao_bc = ""
     else:
         # Lógica normal
         campo_11_tributacao = tributacaoICMS(cstb_final, dados.get("aliquota_cadastro"))

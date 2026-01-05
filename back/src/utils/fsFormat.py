@@ -3,88 +3,14 @@ import unicodedata
 from typing import Dict, Any
 from datetime import date, datetime
 
-UNIDADES = {
-    "KG": "QUILOGRAMA",
-    "UN": "UNIDADE",
-    "PC": "PECA",
-    "CX": "CAIXA",
-    "L": "LITRO",
-    "M": "METRO",
-    "M2": "METRO QUADRADO",
-    "M3": "METRO CUBICO",
-    "PÇ": "PEÇA",
-    "PCT": "PACOTE",
-    "PR": "PAR",
-    "DZ": "DUZIA",
-    "GL": "GALÃO",
-    "FR": "FRASCO",
-    "ML": "MILILITRO",
-    "B1": "BANDEJA",
-    "BAN": "BAN",
-    "BD": "BD",
-    "BDJ": "BANDEJA",
-    "BJ": "BJ",
-    "CA": "CARTELA",
-    "CD": "UNIDADE",
-    "CE": "CE",
-    "CJ": "CONJUNTO",
-    "CL": "CARTELA",
-    "CP": "CP",
-    "CR": "",
-    "CRT": "CARTELA",
-    "CT": "CARTELA",
-    "CTC": "CARTUCHO",
-    "CXA": "CAIXA",
-    "CXT": "CAIXA",
-    "DI": "DISPLAY",
-    "DP": "DISPLAY",
-    "DUZ": "DUZIA",
-    "DZ": "DZ",
-    "EE": "",
-    "EM": "EMBALAGEM",
-    "EQ": "",
-    "EV": "ENVELOPE",
-    "EXB": "EXB",
-    "FAR": "FARDO",
-    "FC": "FC",
-    "FD": "FD",
-    "FDO": "FARDO",
-    "FR": "FR",
-    "GA": "GARRAFA",
-    "GF": "GARRAFA",
-    "GL": "GALAO",
-    "JG": "JG",
-    "KI": "KIT",
-    "LA": "LA",
-    "LI": "LITRO",
-    "LT": "LT",
-    "LTA": "LATA",
-    "MC": "MC",
-    "MI": "MILHEIRO",
-    "MIL": "MILHEIRO",
-    "ML": "MILILITRO",
-    "MT": "MT",
-    "PA": "",
-    "PAC": "PAC",
-    "PAR": "PAR",
-    "PC": "PC",
-    "PCT": "PCT",
-    "PO": "UNIDADE",
-    "PR": "PAR",
-    "PRD": "UNIDADE PADRAO",
-    "PT": "PT",
-    "RL": "ROLO",
-    "SA": "UNIDADE",
-    "SAC": "SACA",
-    "SC": "UNIDADE",
-    "SH": "UNIDADE",
-    "TB": "CAIXA",
-    "TP": "TIRA",
-    "UD": "",
-    "UNI": "UNIDADE",
-    "VD": "VIDRO",
-}
-
+def parseFator(valor):
+    if not valor:
+        return 1.0
+    try:
+        return float(valor.replace(",", "."))
+    except ValueError:
+        return 1.0
+    
 def digitos(s):
     return re.sub(r"\D+", "", str(s or ""))
 
@@ -133,7 +59,7 @@ def tributacaoICMS(cstb: str, aliquota_cadastro: str) -> str:
     if cstb in ('40', '41'):
         return '2'  # Isento
     
-    if cstb in ('60', '90', '30', '50', '51'):
+    if cstb in ('60', '90', '30', '50', '51', '98', '99'):
         return '3'  # Outros
     
     # Padrão: Débito/Crédito

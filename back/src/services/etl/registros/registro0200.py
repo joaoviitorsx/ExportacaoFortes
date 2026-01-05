@@ -10,6 +10,7 @@ class Registro0200Service:
         self.periodo = None
         self.tabela = "registro_0200"
         self.nome = "0200"
+        self.cod_item_atual = None
 
     def set_context(self, periodo, filial):
         self.periodo = periodo
@@ -45,10 +46,10 @@ class Registro0200Service:
         }
         ok, erros = ValidadorService.validarRegistro0200(dados)
         if ok:
+            self.cod_item_atual = dados["cod_item"]
             self.lote.append(dados)
         else:
             return
-
 
     def toDataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self.lote)

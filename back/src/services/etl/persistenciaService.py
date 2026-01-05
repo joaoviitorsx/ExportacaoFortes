@@ -1,7 +1,10 @@
 from typing import Dict, Any
 from ...repositories.registrosRepo.registro0000Repository import Registro0000Repository
 from ...repositories.registrosRepo.registro0150Repository import Registro0150Repository
+from ...repositories.registrosRepo.registro0190Repository import Registro0190Repository
 from ...repositories.registrosRepo.registro0200Repository import Registro0200Repository
+from ...repositories.registrosRepo.registro0220Repository import Registro0220Repository
+from ...repositories.registrosRepo.registro0221Repository import Registro0221Repository
 from ...repositories.registrosRepo.registroC100Repository import RegistroC100Repository
 from ...repositories.registrosRepo.registroC170Repository import RegistroC170Repository
 from ...repositories.registrosRepo.registroC190Repository import RegistroC190Repository
@@ -11,26 +14,45 @@ class PersistenciaService:
         self.session = session
         self.repo0000 = Registro0000Repository(session)
         self.repo0150 = Registro0150Repository(session)
+        self.repo0190 = Registro0190Repository(session)
         self.repo0200 = Registro0200Repository(session)
+        self.repo0220 = Registro0220Repository(session)
+        self.repo0221 = Registro0221Repository(session)
         self.repoC100 = RegistroC100Repository(session)
         self.repoC170 = RegistroC170Repository(session)
         self.repoC190 = RegistroC190Repository(session)
 
     #Persiste os dados extraídos do SPED, garantindo integridade entre C100, C170 e C190.
     def salvar(self, dados: Dict[str, Any]) -> Dict[str, int]:
-        stats = {"0000": 0, "0150": 0, "0200": 0, "c100": 0, "c170": 0, "c190": 0, "notas_ignoradas": 0}
+        stats = {"0000": 0, "0150": 0, "0190": 0, "0200": 0, "0220": 0, "0221": 0, "c100": 0, "c170": 0, "c190": 0, "notas_ignoradas": 0}
 
         try:
-            #Cabeçalhos
-            if dados["cabecalhos"]["0000"]:
-                self.repo0000.salvamento(dados["cabecalhos"]["0000"])
-                stats["0000"] = len(dados["cabecalhos"]["0000"])
-            if dados["cabecalhos"]["0150"]:
-                self.repo0150.salvamento(dados["cabecalhos"]["0150"])
-                stats["0150"] = len(dados["cabecalhos"]["0150"])
-            if dados["cabecalhos"]["0200"]:
-                self.repo0200.salvamento(dados["cabecalhos"]["0200"])
-                stats["0200"] = len(dados["cabecalhos"]["0200"])
+            cab = dados.get("cabecalhos", {})
+
+            if cab.get("0000"):
+                self.repo0000.salvamento(cab["0000"])
+                stats["0000"] = len(cab["0000"])
+
+            if cab.get("0150"):
+                self.repo0150.salvamento(cab["0150"])
+                stats["0150"] = len(cab["0150"])
+
+            if cab.get("0190"):
+                self.repo0190.salvamento(cab["0190"])
+                stats["0190"] = len(cab["0190"])
+
+            if cab.get("0200"):
+                self.repo0200.salvamento(cab["0200"])
+                stats["0200"] = len(cab["0200"])
+
+            if cab.get("0220"):
+                self.repo0220.salvamento(cab["0220"])
+                stats["0220"] = len(cab["0220"])
+
+            if cab.get("0221"):
+                self.repo0221.salvamento(cab["0221"])
+                stats["0221"] = len(cab["0221"])
+
             self.session.commit()
 
             #Notas Fiscais
