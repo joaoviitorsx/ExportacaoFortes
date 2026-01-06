@@ -7,4 +7,4 @@ def builderUND(cod_unid: str, descr_unid: str) -> str:
         validacaoText(descr_unid, 60),
     ]
 
-    return "|".join(campos) + "|"
+    return "|".join(campos)
