@@ -182,14 +182,15 @@ class UploadCard(Card):
     def showDownloadProgress(self, visible=True):
         if visible:
             self.download_progress = DownloadProgressBar()
-            self.download_progress.start()  # Inicia o loading infinito
             self.main_content.controls = [
                 ft.Text("Gerando Arquivo .fs", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
                 ft.Text("Aguarde enquanto geramos o arquivo para download", size=13, color=ft.Colors.GREY_600),
                 self.download_progress,
             ]
-            # Atualiza o card pai
+            # Atualiza o card pai primeiro para adicionar os controles à página
             self.update()
+            # Agora que o controle está na página, podemos iniciar o loading
+            self.download_progress.start()
         else:
             # Volta para a tela anterior
             if self.files_card:
