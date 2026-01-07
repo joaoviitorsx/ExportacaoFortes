@@ -3,7 +3,7 @@ PyMySQL
 pandas
 python-dotenv
 aiohttp
-flet==0.24.1
+flet==0.28.3
 cryptography
 chardet
 nest_asyncio

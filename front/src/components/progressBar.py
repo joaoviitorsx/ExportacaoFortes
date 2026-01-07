@@ -8,12 +8,27 @@ class ProgressBar(ft.Column):
             expand=True,
         )
 
-        self.bar = ft.ProgressBar(width=620, height=12, value=0, bgcolor="#ddd", border_radius=6)
-        self.status = ft.Text("Aguardando processamento...", size=14, color="grey")
+        self.bar = ft.ProgressBar(
+            expand=True,
+            height=12,
+            value=0,
+            bgcolor="#E0E0E0",
+            border_radius=6,
+        )
+
+        self.status = ft.Text(
+            "Aguardando processamento...",
+            size=14,
+            color=ft.Colors.GREY_600,
+        )
 
         self.controls = [
-            self.bar,
-            self.status
+            ft.Container(
+                content=self.bar,
+                padding=ft.padding.symmetric(horizontal=20),
+                expand=True,
+            ),
+            self.status,
         ]
 
     def start(self):
@@ -31,6 +46,7 @@ class ProgressBar(ft.Column):
         self.status.value = "Concluído!"
         self.update()
 
+
 class DownloadProgressBar(ft.Column):
     def __init__(self):
         super().__init__(
@@ -40,30 +56,39 @@ class DownloadProgressBar(ft.Column):
         )
 
         self.bar = ft.ProgressBar(
-            width=620, 
-            height=12, 
-            color=ft.colors.BLUE_600, 
-            bgcolor="#ddd", 
-            border_radius=6
+            expand=True,
+            height=12,
+            color=ft.Colors.BLUE_600,
+            bgcolor="#E0E0E0",
+            border_radius=6,
+            visible=False,
         )
-        self.status = ft.Text("Gerando arquivo...", size=14, color="grey")
+
+        self.status = ft.Text("", size=14)
 
         self.controls = [
-            self.bar,
-            self.status
+            ft.Container(
+                content=self.bar,
+                padding=ft.padding.symmetric(horizontal=20),
+                expand=True,
+            ),
+            self.status,
         ]
 
     def start(self):
         self.bar.visible = True
-        self.bar.value = None
+        self.bar.value = None  # indeterminada
         self.status.value = "Gerando arquivo .fs..."
-        self.status.color = ft.colors.GREY_700
+        self.status.color = ft.Colors.GREY_700
+        self.update()
 
     def finish(self):
-        self.bar.value = 1  # 100%
+        self.bar.value = 1
         self.status.value = "Arquivo gerado com sucesso!"
-        self.status.color = ft.colors.GREEN_600
+        self.status.color = ft.Colors.GREEN_600
+        self.update()
 
     def hide(self):
         self.bar.visible = False
         self.status.value = ""
+        self.update()

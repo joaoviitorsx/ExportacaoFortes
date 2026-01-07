@@ -9,6 +9,8 @@ from ..components.header import Header
 from ..components.fileUpload import UploadCard
 from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
+from ..components.reconnectIndicator import ReconnectIndicator
+from back.src.utils.connectionMonitor import get_connection_monitor
 
 def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft.View:
     #page.title = "Exportação SPED → Fortes Fiscal"
@@ -16,17 +18,67 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = "#F5F6FA"
     page.padding = 30
+    
+    is_reconnecting = False
+    connection_monitor = get_connection_monitor()
+    reconnect_indicator = ReconnectIndicator()
 
     btnProcessar = ActionButton(
-        "Processar Arquivo", icon=ft.icons.PLAY_ARROW, disabled=True, color="primary"
+        "Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True, color="primary"
     )
     btnDownload = ActionButton(
-        "Baixar Arquivo .fs", icon=ft.icons.DOWNLOAD, visible=False, color="success"
+        "Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False, color="success"
     )
 
     uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
     selected_files = []
     processado_ok = False
+    
+    async def start_reconnection_monitor():
+        """Inicia o monitoramento de reconexão"""
+        nonlocal is_reconnecting
+        
+        if is_reconnecting:
+            print("[DEBUG] Monitoramento já está em andamento (main)")
+            return
+        
+        print("[DEBUG] Iniciando monitoramento de reconexão no main...")
+        is_reconnecting = True
+        reconnect_indicator.visible = True
+        page.update()
+        
+        attempt_count = [0]
+        
+        def test_connection():
+            """Testa a conexão tentando buscar empresas"""
+            from ..routes.empresaRoute import EmpresaRoute
+            print("[DEBUG] Testando conexão no main...")
+            result = EmpresaRoute.listarEmpresas()
+            is_ok = not (isinstance(result, dict) and "erro" in result)
+            print(f"[DEBUG] Resultado do teste (main): {is_ok}")
+            return is_ok
+        
+        def on_retry(attempt: int):
+            print(f"[DEBUG] on_retry (main) - tentativa {attempt}")
+            attempt_count[0] = attempt
+            reconnect_indicator.content.controls[1].value = f"Tentando reconectar... (tentativa {attempt})"
+            page.update()
+        
+        def on_connected():
+            nonlocal is_reconnecting
+            print("[DEBUG] on_connected (main) chamado!")
+            is_reconnecting = False
+            reconnect_indicator.visible = False
+            notificacao(page, "Conexão Restabelecida", "Conectado com sucesso! Você já pode processar arquivos.", tipo="sucesso", duracao=4)
+            page.update()
+        
+        await connection_monitor.monitor_and_retry(
+            test_function=test_connection,
+            on_connected=on_connected,
+            on_retry=on_retry
+        )
+        
+        print("[DEBUG] Monitoramento finalizado no main")
 
     def fileSelected(filenames):
         nonlocal selected_files, processado_ok
@@ -56,7 +108,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
         if btnProcessar.text == "Processar Novamente":
             resetarView()
-            btnProcessar.icon = ft.icons.PLAY_ARROW
+            btnProcessar.icon = ft.Icons.PLAY_ARROW
             page.update()
             return
 
@@ -90,16 +142,23 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                     btnDownload.visible = True
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Novamente"
-                    btnProcessar.icon = ft.icons.REFRESH
+                    btnProcessar.icon = ft.Icons.REFRESH
                     processado_ok = True
                     notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
                 else:
+                    # Verificar se é erro de VPN
+                    if resposta.get("erro") == "vpn":
+                        notificacao(page, "Erro de Conexão", resposta["mensagem"], tipo="erro", duracao=6)
+                        # Iniciar monitoramento de reconexão
+                        page.run_task(start_reconnection_monitor)
+                    else:
+                        notificacao(page, "Erro de Validação", resposta["mensagem"], tipo="erro")
+                    
                     uploaderCard.showProgress(False)
                     uploaderCard.showFiles()
-                    notificacao(page, "Erro de Validação", resposta["mensagem"], tipo="erro")
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Arquivo"
-                    btnProcessar.icon = ft.icons.PLAY_ARROW
+                    btnProcessar.icon = ft.Icons.PLAY_ARROW
                     processado_ok = False
 
             except Exception as e:
@@ -108,7 +167,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                 notificacao(page, "Erro", f"Erro inesperado: {str(e)}", tipo="erro")
                 btnProcessar.disabled = False
                 btnProcessar.text = "Processar Arquivo"
-                btnProcessar.icon = ft.icons.PLAY_ARROW
+                btnProcessar.icon = ft.Icons.PLAY_ARROW
                 processado_ok = False
             
             finally:
@@ -155,7 +214,13 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                         notificacao(page, "Download pronto!", f"Arquivo salvo em {result.path}", tipo="sucesso")
                     else:
                         uploaderCard.showDownloadProgress(False)
-                        notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
+                        # Verificar se é erro de VPN
+                        if resposta.get("erro") == "vpn":
+                            notificacao(page, "Erro de Conexão", resposta["mensagem"], tipo="erro", duracao=6)
+                            # Iniciar monitoramento de reconexão
+                            page.run_task(start_reconnection_monitor)
+                        else:
+                            notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
                 except Exception as e:
                     uploaderCard.showDownloadProgress(False)
                     notificacao(page, "Erro", f"Erro ao gerar arquivo: {str(e)}", tipo="erro")
@@ -173,13 +238,13 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
         title=None,
         content=ft.Row(
             [
-                ft.Text(f"(ID: {id})", size=12, color=ft.colors.GREY_500),
-                ft.Text(f"Empresa: ", size=13, color=ft.colors.GREY_700),
+                ft.Text(f"(ID: {id})", size=12, color=ft.Colors.GREY_500),
+                ft.Text(f"Empresa: ", size=13, color=ft.Colors.GREY_700),
                 ft.Text(
                     f"{nome_empresa}",
                     size=13,
                     weight=ft.FontWeight.BOLD,
-                    color=ft.colors.BLUE_700,
+                    color=ft.Colors.BLUE_700,
                     expand=True               
                 ),
             ],
@@ -195,17 +260,18 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     btnProcessar.on_click = processar
     btnDownload.on_click = escolherLocal
 
-    btn_voltar = ActionButton("Voltar", icon=ft.icons.ARROW_BACK, color="primary")
+    btn_voltar = ActionButton("Voltar", color=ft.Colors.BLUE_600)
     btn_voltar.on_click = lambda e: page.go("/")
 
     main_column = ft.Column(
         [
             ft.Container(
                 content=ft.Row([btn_voltar], alignment=ft.MainAxisAlignment.START),
-                padding=ft.padding.only(top=0, bottom=15),
+                padding=ft.padding.only(bottom=10),
             ),
             Header(),
             card_empresa,
+            reconnect_indicator,  # Indicador de reconexão
             uploaderCard,
             ft.Row(
                 [btnProcessar, btnDownload],

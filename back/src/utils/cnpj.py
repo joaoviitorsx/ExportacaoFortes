@@ -20,7 +20,6 @@ CNAES_VALIDOS = {
 async def buscarInformacoes(cnpj: str, tentativas: int = 5) -> tuple[str, str, str, bool, bool] | tuple[None, None, None, None, None]:
 
     cnpj = removedorCaracteres(cnpj.strip())
-
     if len(cnpj) != 14:
         raise ValueError("CNPJ inválido: deve conter 14 dígitos")
 

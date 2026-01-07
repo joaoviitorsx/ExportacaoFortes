@@ -23,10 +23,10 @@ def notificacao(page: ft.Page, titulo: str, mensagem: str, tipo: str = "info", d
         return
     
     tipos: Dict[str, Dict[str, Union[str, str]]] = {
-        "sucesso": {"bg": "#1fb355", "text": "white", "icon": ft.icons.CHECK_CIRCLE},
-        "erro": {"bg": "#db3e3e", "text": "white", "icon": ft.icons.ERROR},
-        "info": {"bg": "#3474dc", "text": "white", "icon": ft.icons.INFO},
-        "alerta": {"bg": "#db8f0b", "text": "white", "icon": ft.icons.WARNING},
+        "sucesso": {"bg": "#1fb355", "text": "white", "icon": ft.Icons.CHECK_CIRCLE},
+        "erro": {"bg": "#db3e3e", "text": "white", "icon": ft.Icons.ERROR},
+        "info": {"bg": "#3474dc", "text": "white", "icon": ft.Icons.INFO},
+        "alerta": {"bg": "#db8f0b", "text": "white", "icon": ft.Icons.WARNING},
     }
     
     estilo = tipos.get(tipo, tipos["info"])
@@ -122,7 +122,7 @@ def notificacaoContainer(page: ft.Page, titulo: str, mensagem: str, estilo: dict
             removerNotificacaoSync(page, notification)
     
     btn_fechar = ft.IconButton(
-        icon=ft.icons.CLOSE,
+        icon=ft.Icons.CLOSE,
         icon_size=16,
         icon_color=estilo["text"],
         tooltip="Fechar",
@@ -132,7 +132,7 @@ def notificacaoContainer(page: ft.Page, titulo: str, mensagem: str, estilo: dict
     notification = ft.Container(
         content=ft.Card(
             elevation=8,
-            shadow_color=ft.colors.BLACK54,
+            shadow_color=ft.Colors.BLACK54,
             content=ft.Container(
                 padding=ft.padding.all(16),
                 bgcolor=estilo["bg"],

@@ -5,6 +5,8 @@ from ..components.notificacao import notificacao
 from ..routes.empresaRoute import EmpresaRoute
 from ..components.card import Card
 from ..utils.cnpjFormatador import formatarCnpj
+from ..components.reconnectIndicator import ReconnectIndicator
+from back.src.utils.connectionMonitor import get_connection_monitor
 
 def CadastroView(page: ft.Page) -> ft.View:
     page.vertical_alignment = ft.MainAxisAlignment.START
@@ -13,6 +15,11 @@ def CadastroView(page: ft.Page) -> ft.View:
     page.padding = 30
 
     empresa_dados = {}
+    is_reconnecting = False
+    connection_monitor = get_connection_monitor()
+    
+    # Indicador de reconexão
+    reconnect_indicator = ReconnectIndicator()
 
     cnpj_input = ft.TextField(
         label="Digite o CNPJ",
@@ -20,7 +27,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         height=50,
         border_radius=12,
         filled=True,
-        fill_color=ft.colors.WHITE,
+        fill_color=ft.Colors.WHITE,
     )
 
     def formataInput(e):
@@ -32,19 +39,64 @@ def CadastroView(page: ft.Page) -> ft.View:
 
     btn_salvar = ActionButton(
         "Salvar", 
-        icon=ft.icons.SAVE, 
-        color=ft.colors.GREY_400,
+        icon=ft.Icons.SAVE, 
+        color=ft.Colors.GREY_400,
         disabled=True
     )
-    btn_voltar = ActionButton("Voltar", icon=ft.icons.ARROW_BACK, color=ft.colors.BLUE_600)
+    btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color=ft.Colors.BLUE_600)
+    
+    async def start_reconnection_monitor():
+        """Inicia o monitoramento de reconexão"""
+        nonlocal is_reconnecting
+        
+        if is_reconnecting:
+            print("[DEBUG] Monitoramento já está em andamento (cadastro)")
+            return
+        
+        print("[DEBUG] Iniciando monitoramento de reconexão no cadastro...")
+        is_reconnecting = True
+        reconnect_indicator.visible = True
+        page.update()
+        
+        attempt_count = [0]
+        
+        def test_connection():
+            """Testa a conexão tentando buscar empresas"""
+            print("[DEBUG] Testando conexão no cadastro...")
+            result = EmpresaRoute.listarEmpresas()
+            is_ok = not (isinstance(result, dict) and "erro" in result)
+            print(f"[DEBUG] Resultado do teste: {is_ok}")
+            return is_ok
+        
+        def on_retry(attempt: int):
+            print(f"[DEBUG] on_retry (cadastro) - tentativa {attempt}")
+            attempt_count[0] = attempt
+            reconnect_indicator.content.controls[1].value = f"Tentando reconectar... (tentativa {attempt})"
+            page.update()
+        
+        def on_connected():
+            nonlocal is_reconnecting
+            print("[DEBUG] on_connected (cadastro) chamado!")
+            is_reconnecting = False
+            reconnect_indicator.visible = False
+            notificacao(page, "Conexão Restabelecida", "Conectado com sucesso! Você já pode usar o sistema.", tipo="sucesso", duracao=4)
+            page.update()
+        
+        await connection_monitor.monitor_and_retry(
+            test_function=test_connection,
+            on_connected=on_connected,
+            on_retry=on_retry
+        )
+        
+        print("[DEBUG] Monitoramento finalizado no cadastro")
 
     info_card = ft.Container(
-        bgcolor=ft.colors.GREY_50,
+        bgcolor=ft.Colors.GREY_50,
         border_radius=8,
         padding=15,
         content=None,
         visible=False,
-        border=ft.border.all(1, ft.colors.GREY_300),
+        border=ft.border.all(1, ft.Colors.GREY_300),
         animate_opacity=300,
         animate_size=300,
     )
@@ -56,7 +108,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         info_card.visible = False
         info_card.content = None
         btn_salvar.disabled = True
-        btn_salvar.bgcolor = ft.colors.GREY_400
+        btn_salvar.bgcolor = ft.Colors.GREY_400
         page.update()
 
         if not cnpj:
@@ -65,6 +117,16 @@ def CadastroView(page: ft.Page) -> ft.View:
 
         try:
             empresa_dados = EmpresaRoute.buscarCnpj(cnpj)
+            
+            # Verificar se houve erro de conexão
+            if isinstance(empresa_dados, dict) and "erro" in empresa_dados:
+                if empresa_dados["erro"] == "vpn":
+                    notificacao(page, "Erro de Conexão", empresa_dados["mensagem"], tipo="erro", duracao=6)
+                    # Iniciar monitoramento de reconexão
+                    page.run_task(start_reconnection_monitor)
+                else:
+                    notificacao(page, "Erro", empresa_dados["mensagem"], tipo="erro")
+                return
 
             if not empresa_dados:
                 notificacao(page, "Erro", "Empresa não encontrada.", tipo="erro")
@@ -94,7 +156,7 @@ def CadastroView(page: ft.Page) -> ft.View:
                 )
                 info_card.visible = True
                 btn_salvar.disabled = False
-                btn_salvar.bgcolor = ft.colors.GREEN_600
+                btn_salvar.bgcolor = ft.Colors.GREEN_600
                 notificacao(page, "Sucesso", "Dados encontrados!", tipo="sucesso")
 
             page.update()
@@ -109,6 +171,17 @@ def CadastroView(page: ft.Page) -> ft.View:
 
         try:
             resultado = EmpresaRoute.cadastrarEmpresa(empresa_dados)
+            
+            # Verificar se houve erro de conexão
+            if isinstance(resultado, dict) and "erro" in resultado:
+                if resultado["erro"] == "vpn":
+                    notificacao(page, "Erro de Conexão", resultado["mensagem"], tipo="erro", duracao=6)
+                    # Iniciar monitoramento de reconexão
+                    page.run_task(start_reconnection_monitor)
+                elif resultado["erro"] == "geral":
+                    notificacao(page, "Erro", resultado["mensagem"], tipo="erro")
+                return
+            
             if resultado and resultado.get("status") == "erro":
                 notificacao(page, "Info", resultado.get("mensagem", "Empresa já cadastrada."), tipo="info")
             elif resultado and resultado.get("status") == "ok":
@@ -125,7 +198,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         page.go("/")
 
     cnpj_input.on_submit = buscar_empresa
-    cnpj_input.suffix = ft.IconButton(icon=ft.icons.SEARCH, on_click=buscar_empresa)
+    cnpj_input.suffix = ft.IconButton(icon=ft.Icons.SEARCH, on_click=buscar_empresa)
     btn_salvar.on_click = salvar
     btn_voltar.on_click = voltar
 
@@ -148,6 +221,7 @@ def CadastroView(page: ft.Page) -> ft.View:
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
+            reconnect_indicator,  # Indicador de reconexão
             ft.ResponsiveRow(
                 [
                     ft.Column(
@@ -187,7 +261,7 @@ def CadastroView(page: ft.Page) -> ft.View:
     card = Card(
         title="Cadastro de Empresa",
         content=conteudo,
-        icon=ft.icons.ADD_BUSINESS,
+        icon=ft.Icons.ADD_BUSINESS,
         width=500,
     )
 
