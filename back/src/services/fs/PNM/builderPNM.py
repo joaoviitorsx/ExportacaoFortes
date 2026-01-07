@@ -37,6 +37,8 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     is_pis_70 = cst_pis_raw == "70"
     is_cofins_73 = cst_cofins_raw == "73"
     is_pis_73 = cst_pis_raw == "73"
+    is_cofins_98 = cst_cofins_raw == "98"
+    is_pis_98 = cst_pis_raw == "98"
 
     tipo_calc_cofins = "2" if float(dados.get("aliq_cofins_reais", 0) or 0) > 0 else "1"
     tipo_calc_pis = "2" if float(dados.get("aliq_pis_reais", 0) or 0) > 0 else "1"
@@ -50,15 +52,14 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     )
     
     # Campos 39 e 40 devem ficar vazios quando:
-    # - CST COFINS/PIS for 70, OU
-    # - CSTB (CST de ICMS) for 98
-    if is_cofins_70 or cstb_final == '98':
+    # - CST COFINS/PIS for 70 ou 98
+    if is_cofins_70 or is_cofins_98:
         cst_confins_final = ""
     else:
         cst_confins = str(dados.get("vl_bc_cofins") or "").strip()
         cst_confins_final = cst_confins if cst_confins else formatarValor(dados.get("vl_item"))
 
-    if is_pis_70 or cstb_final == '98':
+    if is_pis_70 or is_pis_98:
         cst_pis_final = ""
     else:
         cst_pis = str(dados.get("vl_bc_pis") or "").strip()
