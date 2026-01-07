@@ -7,24 +7,24 @@ class UploadArea(ft.Container):
         super().__init__(
             content=ft.Column(
                 [
-                    ft.Icon(name=ft.Icons.UPLOAD_FILE, size=40, color=ft.Colors.BLUE_GREY),
+                    ft.Icon(name=ft.icons.UPLOAD_FILE, size=40, color=ft.colors.BLUE_GREY),
                     ft.Text(
                         "Clique para selecionar",
                         size=13,
-                        color=ft.Colors.GREY_700,
+                        color=ft.colors.GREY_700,
                         text_align=ft.TextAlign.CENTER,
                     ),
                     ft.Text(
                         "Apenas arquivos .txt são aceitos",
                         size=11,
-                        color=ft.Colors.GREY_500,
+                        color=ft.colors.GREY_500,
                         italic=True,
                     ),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=5,
             ),
-            border=ft.border.all(1, ft.Colors.GREY_400),
+            border=ft.border.all(1, ft.colors.GREY_400),
             border_radius=8,
             padding=30,
             margin=ft.margin.only(top=10),
@@ -38,18 +38,18 @@ class SelectedFilesCard(Card):
         restantes = len(filenames) - 3
 
         self.refreshButton = ft.IconButton(
-            icon=ft.Icons.REFRESH,
+            icon=ft.icons.REFRESH,
             tooltip="Voltar",
             on_click=on_back,
-            icon_color=ft.Colors.BLUE_600,
+            icon_color=ft.colors.BLUE_600,
         )
 
         content = ft.Column(
             [
                 ft.Row(
                     [
-                        ft.Icon(name=ft.Icons.FILE_PRESENT, size=30, color=ft.Colors.GREEN_600),
-                        ft.Text("Arquivos Selecionados", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
+                        ft.Icon(name=ft.icons.FILE_PRESENT, size=30, color=ft.colors.GREEN_600),
+                        ft.Text("Arquivos Selecionados", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                         ft.Container(
                             content=self.refreshButton,
                             width=40,
@@ -61,11 +61,11 @@ class SelectedFilesCard(Card):
                 ft.Container(
                     content=ft.ResponsiveRow(
                         [
-                            ft.Text(nome, size=13, color=ft.Colors.GREY_700, selectable=True)
+                            ft.Text(nome, size=13, color=ft.colors.GREY_700, selectable=True)
                             for nome in primeiros
                         ] +
                         (
-                            [ft.Text(f"… mais {restantes} arquivo(s) selecionado(s)", size=13, color=ft.Colors.GREY_700, selectable=True)]
+                            [ft.Text(f"… mais {restantes} arquivo(s) selecionado(s)", size=13, color=ft.colors.GREY_700, selectable=True)]
                             if restantes > 0 else []
                         ),
                         alignment=ft.MainAxisAlignment.START,
@@ -74,7 +74,7 @@ class SelectedFilesCard(Card):
                         run_spacing=0,
                     ),
                     padding=10,
-                    border=ft.border.all(1, ft.Colors.GREY_300),
+                    border=ft.border.all(1, ft.colors.GREY_300),
                     border_radius=5,
                     expand=True,
                 )
@@ -98,8 +98,8 @@ class UploadCard(Card):
 
         self.main_content = ft.Column(
             [
-                ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
-                ft.Text("Selecione um arquivo .txt do SPED para processamento", size=13, color=ft.Colors.GREY_600),
+                ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+                ft.Text("Selecione um arquivo .txt do SPED para processamento", size=13, color=ft.colors.GREY_600),
                 self.upload_area,
             ],
             spacing=12,
@@ -113,7 +113,7 @@ class UploadCard(Card):
             spacing=12,
         )
 
-        super().__init__(title="Upload do Arquivo", content=self.content_column, icon=ft.Icons.INSERT_DRIVE_FILE_ROUNDED)
+        super().__init__(title="Upload do Arquivo", content=self.content_column, icon=ft.icons.INSERT_DRIVE_FILE_ROUNDED)
 
     def _pick_files(self, _):
         self.file_picker.pick_files(
@@ -139,8 +139,8 @@ class UploadCard(Card):
     def showFiles(self):
         self.files_card = SelectedFilesCard(self.selected_files, self.showUpload)
         self.main_content.controls = [
-            ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
-            ft.Text("Arquivos selecionados com sucesso", size=13, color=ft.Colors.GREY_600),
+            ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+            ft.Text("Arquivos selecionados com sucesso", size=13, color=ft.colors.GREY_600),
             self.files_card,
         ]
         self.update()
@@ -155,8 +155,8 @@ class UploadCard(Card):
         self.selected_files = []
         self.selected_paths = []
         self.main_content.controls = [
-            ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
-            ft.Text("Selecione um arquivo .txt do SPED para processamento", size=13, color=ft.Colors.GREY_600),
+            ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+            ft.Text("Selecione um arquivo .txt do SPED para processamento", size=13, color=ft.colors.GREY_600),
             self.upload_area,
         ]
         self.update()
@@ -165,8 +165,8 @@ class UploadCard(Card):
         if visible:
             self.progress = ProgressBar()
             self.main_content.controls = [
-                ft.Text("Processando Arquivo", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
-                ft.Text("Aguarde enquanto processamos o arquivo SPED", size=13, color=ft.Colors.GREY_600),
+                ft.Text("Processando Arquivo", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+                ft.Text("Aguarde enquanto processamos o arquivo SPED", size=13, color=ft.colors.GREY_600),
                 self.progress,
             ]
             # Atualiza o card pai, não o progress bar diretamente
@@ -184,8 +184,8 @@ class UploadCard(Card):
             self.download_progress = DownloadProgressBar()
             self.download_progress.start()  # Inicia o loading infinito
             self.main_content.controls = [
-                ft.Text("Gerando Arquivo .fs", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
-                ft.Text("Aguarde enquanto geramos o arquivo para download", size=13, color=ft.Colors.GREY_600),
+                ft.Text("Gerando Arquivo .fs", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+                ft.Text("Aguarde enquanto geramos o arquivo para download", size=13, color=ft.colors.GREY_600),
                 self.download_progress,
             ]
             # Atualiza o card pai

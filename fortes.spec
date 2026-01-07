@@ -1,5 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import certifi
+import ssl
+
+# Obter caminho do arquivo de certificados
+cert_file = certifi.where()
 
 datas = [
     ('.env', '.'),
@@ -14,6 +19,8 @@ datas = [
     ('back/src/repositories', 'back/src/repositories'),
     ('back/src/services', 'back/src/services'),
     ('back/src/utils', 'back/src/utils'),
+    # Incluir arquivo de certificados SSL
+    (cert_file, 'certifi'),
 ]
 
 hiddenimports = [
@@ -26,6 +33,9 @@ hiddenimports = [
     'dotenv',
     'flet',
     'flet_core',
+    'flet_runtime',
+    'certifi',
+    'ssl',
 ]
 
 a = Analysis(

@@ -15,8 +15,8 @@ def main(page: ft.Page):
     page.window.icon = resourcePath("front/src/assets/icone.ico")
     page.theme = ft.Theme(
         color_scheme=ft.ColorScheme(
-            primary=ft.Colors.BLUE_600,
-            secondary=ft.Colors.PURPLE_500,
+            primary=ft.colors.BLUE_600,
+            secondary=ft.colors.PURPLE_500,
             background="#F5F6FA",
         )
     )

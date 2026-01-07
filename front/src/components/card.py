@@ -3,14 +3,14 @@ import flet as ft
 class Card(ft.Container):
     def __init__(self, title: str, content: ft.Control, icon: str = None, width: int = None, height: int = None):
         super().__init__(
-            bgcolor=ft.Colors.WHITE,
+            bgcolor=ft.colors.WHITE,
             border_radius=12,
             padding=20,
             margin=ft.margin.only(top=12, bottom=2, right=8, left=8),
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=8,
-                color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK),
+                color=ft.colors.with_opacity(0.12, ft.colors.BLACK),
                 offset=ft.Offset(0, 2),
             ),
             expand=False,
@@ -24,12 +24,12 @@ class Card(ft.Container):
                 controls.append(
                     ft.Row(
                         [
-                            ft.Icon(icon, size=20, color=ft.Colors.BLUE_600),
+                            ft.Icon(icon, size=20, color=ft.colors.BLUE_600),
                             ft.Text(
                                 title,
                                 size=16,
                                 weight=ft.FontWeight.BOLD,
-                                color=ft.Colors.BLACK87,
+                                color=ft.colors.BLACK87,
                             ),
                         ],
                         spacing=8,
@@ -43,10 +43,10 @@ class Card(ft.Container):
                         title,
                         size=16,
                         weight=ft.FontWeight.BOLD,
-                        color=ft.Colors.BLACK87,
+                        color=ft.colors.BLACK87,
                     )
                 )
-            controls.append(ft.Divider(height=15, color=ft.Colors.TRANSPARENT))
+            controls.append(ft.Divider(height=15, color=ft.colors.TRANSPARENT))
 
         controls.append(content)
 

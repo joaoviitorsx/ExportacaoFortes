@@ -11,22 +11,22 @@ class ActionButton(ft.ElevatedButton):
             style=ft.ButtonStyle(
                 bgcolor={
                     ft.ControlState.DEFAULT: self.getBg(color),
-                    ft.ControlState.DISABLED: ft.Colors.GREY_400,
+                    ft.ControlState.DISABLED: ft.colors.GREY_400,
                 },
                 color={
-                    ft.ControlState.DEFAULT: ft.Colors.WHITE,
-                    ft.ControlState.DISABLED: ft.Colors.BLACK87,
+                    ft.ControlState.DEFAULT: ft.colors.WHITE,
+                    ft.ControlState.DISABLED: ft.colors.BLACK87,
                 },
-                padding=ft.padding.symmetric(horizontal=18, vertical=18),
+                padding=ft.padding.symmetric(horizontal=12, vertical=12),
                 shape=ft.RoundedRectangleBorder(radius=8),
             ),
         )
 
     def getBg(self, color: str):
         cores = {
-            "primary": ft.Colors.BLUE_600,
-            "success": ft.Colors.GREEN_600,
-            "secondary": ft.Colors.GREY_600,
-            "danger": ft.Colors.RED_600,
+            "primary": ft.colors.BLUE_600,
+            "success": ft.colors.GREEN_600,
+            "secondary": ft.colors.GREY_600,
+            "danger": ft.colors.RED_600,
         }
-        return cores.get(color, ft.Colors.BLUE_600)
+        return cores.get(color, ft.colors.BLUE_600)

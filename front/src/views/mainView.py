@@ -18,10 +18,10 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     page.padding = 30
 
     btnProcessar = ActionButton(
-        "Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True, color="primary"
+        "Processar Arquivo", icon=ft.icons.PLAY_ARROW, disabled=True, color="primary"
     )
     btnDownload = ActionButton(
-        "Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False, color="success"
+        "Baixar Arquivo .fs", icon=ft.icons.DOWNLOAD, visible=False, color="success"
     )
 
     uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
@@ -56,7 +56,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
         if btnProcessar.text == "Processar Novamente":
             resetarView()
-            btnProcessar.icon = ft.Icons.PLAY_ARROW
+            btnProcessar.icon = ft.icons.PLAY_ARROW
             page.update()
             return
 
@@ -90,7 +90,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                     btnDownload.visible = True
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Novamente"
-                    btnProcessar.icon = ft.Icons.REFRESH
+                    btnProcessar.icon = ft.icons.REFRESH
                     processado_ok = True
                     notificacao(page, "Sucesso!", resposta["mensagem"], tipo="sucesso")
                 else:
@@ -99,7 +99,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                     notificacao(page, "Erro de Validação", resposta["mensagem"], tipo="erro")
                     btnProcessar.disabled = False
                     btnProcessar.text = "Processar Arquivo"
-                    btnProcessar.icon = ft.Icons.PLAY_ARROW
+                    btnProcessar.icon = ft.icons.PLAY_ARROW
                     processado_ok = False
 
             except Exception as e:
@@ -108,7 +108,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                 notificacao(page, "Erro", f"Erro inesperado: {str(e)}", tipo="erro")
                 btnProcessar.disabled = False
                 btnProcessar.text = "Processar Arquivo"
-                btnProcessar.icon = ft.Icons.PLAY_ARROW
+                btnProcessar.icon = ft.icons.PLAY_ARROW
                 processado_ok = False
             
             finally:
@@ -173,13 +173,13 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
         title=None,
         content=ft.Row(
             [
-                ft.Text(f"(ID: {id})", size=12, color=ft.Colors.GREY_500),
-                ft.Text(f"Empresa: ", size=13, color=ft.Colors.GREY_700),
+                ft.Text(f"(ID: {id})", size=12, color=ft.colors.GREY_500),
+                ft.Text(f"Empresa: ", size=13, color=ft.colors.GREY_700),
                 ft.Text(
                     f"{nome_empresa}",
                     size=13,
                     weight=ft.FontWeight.BOLD,
-                    color=ft.Colors.BLUE_700,
+                    color=ft.colors.BLUE_700,
                     expand=True               
                 ),
             ],
@@ -195,14 +195,14 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     btnProcessar.on_click = processar
     btnDownload.on_click = escolherLocal
 
-    btn_voltar = ActionButton("Voltar", color=ft.Colors.BLUE_600)
+    btn_voltar = ActionButton("Voltar", icon=ft.icons.ARROW_BACK, color="primary")
     btn_voltar.on_click = lambda e: page.go("/")
 
     main_column = ft.Column(
         [
             ft.Container(
                 content=ft.Row([btn_voltar], alignment=ft.MainAxisAlignment.START),
-                padding=ft.padding.only(bottom=10),
+                padding=ft.padding.only(top=0, bottom=15),
             ),
             Header(),
             card_empresa,

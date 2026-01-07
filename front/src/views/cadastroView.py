@@ -20,7 +20,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         height=50,
         border_radius=12,
         filled=True,
-        fill_color=ft.Colors.WHITE,
+        fill_color=ft.colors.WHITE,
     )
 
     def formataInput(e):
@@ -32,19 +32,19 @@ def CadastroView(page: ft.Page) -> ft.View:
 
     btn_salvar = ActionButton(
         "Salvar", 
-        icon=ft.Icons.SAVE, 
-        color=ft.Colors.GREY_400,
+        icon=ft.icons.SAVE, 
+        color=ft.colors.GREY_400,
         disabled=True
     )
-    btn_voltar = ActionButton("Voltar", icon=ft.Icons.ARROW_BACK, color=ft.Colors.BLUE_600)
+    btn_voltar = ActionButton("Voltar", icon=ft.icons.ARROW_BACK, color=ft.colors.BLUE_600)
 
     info_card = ft.Container(
-        bgcolor=ft.Colors.GREY_50,
+        bgcolor=ft.colors.GREY_50,
         border_radius=8,
         padding=15,
         content=None,
         visible=False,
-        border=ft.border.all(1, ft.Colors.GREY_300),
+        border=ft.border.all(1, ft.colors.GREY_300),
         animate_opacity=300,
         animate_size=300,
     )
@@ -56,7 +56,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         info_card.visible = False
         info_card.content = None
         btn_salvar.disabled = True
-        btn_salvar.bgcolor = ft.Colors.GREY_400
+        btn_salvar.bgcolor = ft.colors.GREY_400
         page.update()
 
         if not cnpj:
@@ -94,7 +94,7 @@ def CadastroView(page: ft.Page) -> ft.View:
                 )
                 info_card.visible = True
                 btn_salvar.disabled = False
-                btn_salvar.bgcolor = ft.Colors.GREEN_600
+                btn_salvar.bgcolor = ft.colors.GREEN_600
                 notificacao(page, "Sucesso", "Dados encontrados!", tipo="sucesso")
 
             page.update()
@@ -125,7 +125,7 @@ def CadastroView(page: ft.Page) -> ft.View:
         page.go("/")
 
     cnpj_input.on_submit = buscar_empresa
-    cnpj_input.suffix = ft.IconButton(icon=ft.Icons.SEARCH, on_click=buscar_empresa)
+    cnpj_input.suffix = ft.IconButton(icon=ft.icons.SEARCH, on_click=buscar_empresa)
     btn_salvar.on_click = salvar
     btn_voltar.on_click = voltar
 
@@ -187,7 +187,7 @@ def CadastroView(page: ft.Page) -> ft.View:
     card = Card(
         title="Cadastro de Empresa",
         content=conteudo,
-        icon=ft.Icons.ADD_BUSINESS,
+        icon=ft.icons.ADD_BUSINESS,
         width=500,
     )
 

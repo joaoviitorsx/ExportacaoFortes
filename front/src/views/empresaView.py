@@ -19,16 +19,15 @@ def EmpresaView(page: ft.Page) -> ft.View:
         hint_text="Selecione uma empresa",
         options=[
             ft.dropdown.Option(
-                str(e["id"]),
-                f'{e["razao_social"]} - {e["cnpj"]}',
-                e["cnpj"]
+                key=str(e["id"]),
+                text=f'{e["razao_social"]} - {e["cnpj"]}'
             ) for e in empresas
         ],
         width=350,
         border_radius=12,
-        border_color=ft.Colors.GREY_400,
+        border_color=ft.colors.GREY_400,
         filled=True,
-        fill_color=ft.Colors.WHITE,
+        fill_color=ft.colors.WHITE,
     )
 
     btn_entrar = ActionButton("Entrar", disabled=True, color="primary")
@@ -85,7 +84,7 @@ def EmpresaView(page: ft.Page) -> ft.View:
     card = Card(
         title="",
         content=conteudo,
-        icon=ft.Icons.BUSINESS,
+        icon=ft.icons.BUSINESS,
         width=480,
         height=520, 
     )
