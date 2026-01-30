@@ -3,10 +3,12 @@ from ....utils.fsFormat import validacaoText, formatarValor
 def builderOUM(dados: dict) -> str:
     fator = dados.get("fat_conv")
 
-    if fator is None or fator == "":
-        fator = 0.0
+    # Validação: fator de conversão deve ser > 0
+    # Se for None, vazio ou zero, usar 1.000 como padrão
+    if fator is None or fator == "" or float(fator or 0) <= 0:
+        fator = 1.0
 
-    fator_str = formatarValor(fator, 3) or "0.000"
+    fator_str = formatarValor(fator, 3) or "1.000"
 
     campos = [
         "OUM",

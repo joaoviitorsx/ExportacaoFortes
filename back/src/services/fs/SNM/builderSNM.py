@@ -2,6 +2,18 @@ from typing import Dict, Any
 from ....utils.fsFormat import formatarValor
 
 def builderSNM(dados: Dict[str, Any]) -> str:
+    """
+    Builder para registro SNM (Substituição Tributária).
+    
+    IMPORTANTE: Este registro só deve ser gerado quando o PNM tiver os campos 16-21 preenchidos.
+    O repositório SnmRepository já filtra apenas os registros que atendem às mesmas condições.
+    
+    Condições para gerar SNM (mesmas do PNM campos 16-21):
+    1. Produto existe na tabela (aliquota not in "", "NONE", "NULL")
+    2. Fornecedor é do CE
+    3. Produto NÃO é ST ou ISENTO
+    4. Fornecedor NÃO tem decreto
+    """
     vl_item = float(dados.get("vl_item", 0) or 0)
     vl_desc = float(dados.get("vl_desc", 0) or 0)
     frete_rateado = float(dados.get("frete_rateado", 0) or 0)

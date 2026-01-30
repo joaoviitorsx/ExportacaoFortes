@@ -38,8 +38,6 @@ class PnmRepository:
             WHERE c170.empresa_id = :empresa_id
                 AND c170.ativo = 1
                 AND c100.ativo = 1
-                -- AND c100.cod_mod IN ('01', '1B', '04', '55')
-                -- AND c170.cfop IN ('1101', '1401', '1102', '1403', '1910', '1116', '2101', '2102', '2401', '2403', '2910', '2116')
         """
         params = {"empresa_id": empresa_id}
 

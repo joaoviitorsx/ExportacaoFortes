@@ -1,7 +1,17 @@
 from typing import Dict, Any
 from ....utils.fsFormat import formatarValor, tributacaoICMS 
 
+# CFOPs válidos para cálculo de margem (apenas entradas/compras)
+CFOPS_VALIDOS = {
+    '1101', '1102', '1116', '1401', '1403', '1910',  # Série 1000
+    '2101', '2102', '2116', '2401', '2403', '2910'   # Série 2000
+}
+
 def builderPNM(dados: Dict[str, Any]) -> str:
+    # Verificar se CFOP é válido para cálculos
+    cfop_atual = str(dados.get("cfop", "")).strip()
+    cfop_valido = cfop_atual in CFOPS_VALIDOS
+    
     cst_icms = str(dados.get("cst_icms") or "").zfill(3)
     csta = cst_icms[0] if len(cst_icms) == 3 else ''
     cstb = cst_icms[1:] if len(cst_icms) == 3 else ''
@@ -81,11 +91,15 @@ def builderPNM(dados: Dict[str, Any]) -> str:
     campo_16 = campo_17 = campo_18 = campo_19 = campo_20 = campo_21 = ""
 
     # Condições para preencher campos 16-21 (Substituição Tributária):
-    # 1. Produto deve existir na tabela produtos
-    # 2. Fornecedor deve ser do CE
-    # 3. Produto NÃO pode ser ST ou ISENTO
-    # 4. Fornecedor NÃO pode ter decreto
-    if produtoExisteNaTabela and fornecedor_uf == "CE" and not stOrIsento and not fornecedorDecreto:
+    # 1. CFOP deve ser válido (entrada/compra)
+    # 2. Produto deve existir na tabela produtos
+    # 3. Fornecedor deve ser do CE
+    # 4. Produto NÃO pode ser ST ou ISENTO
+    # 5. Fornecedor NÃO pode ter decreto
+    # 
+    # IMPORTANTE: Quando estes campos são preenchidos, um registro SNM correspondente 
+    # DEVE ser gerado. O repositório SnmRepository usa as mesmas condições.
+    if cfop_valido and produtoExisteNaTabela and fornecedor_uf == "CE" and not stOrIsento and not fornecedorDecreto:
         campo_16 = "1" 
         campo_17 = "1"
         campo_18 = formatarValor(valorTotal)

@@ -99,8 +99,13 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
         btnProcessar.disabled = True
         btnProcessar.text = "Processar Arquivo"
         btnDownload.visible = False
-        uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
-        main_column.controls[3] = uploaderCard
+        
+        # Criar novo componente de upload
+        novo_uploader = UploadCard(on_file_selected=lambda f: fileSelected(f))
+        uploaderCard = novo_uploader
+        
+        # Atualizar o componente na posição correta (índice 4, após reconnect_indicator)
+        main_column.controls[4] = novo_uploader
         page.update()
 
     def processar(e):

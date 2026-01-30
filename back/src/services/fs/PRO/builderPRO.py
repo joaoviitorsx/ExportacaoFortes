@@ -9,7 +9,13 @@ def builderPRO(produto_data: Dict[str, Any]) -> str:
     unid_inv = validacaoText(produto_data.get("unid_inv", ""), 6)
     cod_ncm = validacaoText(produto_data.get("cod_ncm", ""), 20)
     cod_gen = validacaoText(produto_data.get("cod_gen", ""), 2)
-    cest = validacaoText(produto_data.get("cest", ""), 7)
+    
+    # Validar CEST: deve ter exatamente 7 dígitos numéricos
+    cest_raw = str(produto_data.get("cest", "")).strip()
+    if cest_raw and cest_raw.isdigit() and len(cest_raw) == 7:
+        cest = cest_raw
+    else:
+        cest = ""  # CEST inválido, deixar vazio
 
     cod_barra = digitos(produto_data.get("cod_barra", ""))
     
