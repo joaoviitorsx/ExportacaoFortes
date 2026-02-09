@@ -49,7 +49,7 @@ class Header(ft.Column):
                 ], alignment=ft.MainAxisAlignment.CENTER),
                 ft.Container(height=8),
                 ft.Row([
-                    ft.Text("Versão 1.5.5", size=10, color=ft.Colors.GREY_500),
+                    ft.Text("Versão 1.6.0", size=10, color=ft.Colors.GREY_500),
                     ft.Text("•", size=10, color=ft.Colors.GREY_400),
                     ft.Text("Suporte: suporte@realize.com.br", size=10, color=ft.Colors.GREY_500),
                 ], spacing=8, alignment=ft.MainAxisAlignment.CENTER)

@@ -1,6 +1,7 @@
 import os
 import threading
 import flet as ft
+from front.src.utils.formtador import normalizarEmpresa
 
 from ..components.card import Card
 from ..components.header import Header
@@ -10,6 +11,7 @@ from ..components.notificacao import notificacao
 from ..components.reconnectIndicator import ReconnectIndicator
 from ..routes.fsRoute import FsRoute
 from ..utils.ambiente import is_linux
+from ..utils.cnpjFormatador import formatarCnpj
 
 
 def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft.View:
@@ -24,6 +26,17 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     btnProcessar = ActionButton("Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True)
     btnDownload = ActionButton("Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False)
 
+    def resetarView():
+        nonlocal selected_files, processado_ok
+        selected_files = []
+        processado_ok = False
+        uploaderCard.showUpload()
+        btnProcessar.text = "Processar Arquivo"
+        btnProcessar.icon = ft.Icons.PLAY_ARROW
+        btnProcessar.disabled = True
+        btnDownload.visible = False
+        page.update()
+
     def fileSelected(filenames):
         nonlocal selected_files, processado_ok
         selected_files = filenames
@@ -34,6 +47,10 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
     def processar(e):
         nonlocal processado_ok
+
+        if processado_ok:
+            resetarView()
+            return
 
         if not selected_files:
             notificacao(page, "Erro", "Nenhum arquivo selecionado.", tipo="erro")
@@ -164,9 +181,24 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     btnProcessar.on_click = processar
     btnDownload.on_click = escolherLocal
 
+    nome_display, cnpj_display = normalizarEmpresa(nome_empresa, empresa_cnpj)
+
+    empresaCard = Card(
+        title="Empresa Selecionada",
+        icon=ft.Icons.BUSINESS,
+        content=ft.Column(
+            [
+                ft.Text(nome_display or "", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87),
+                ft.Text(f"CNPJ: {formatarCnpj(cnpj_display)}", size=13, color=ft.Colors.GREY_700, visible=bool(cnpj_display)),
+            ],
+            spacing=6,
+        ),
+    )
+
     main_column = ft.Column(
         [
             Header(),
+            empresaCard,
             uploaderCard,
             ft.Row([btnProcessar, btnDownload], alignment=ft.MainAxisAlignment.CENTER),
             Header.footer(),
