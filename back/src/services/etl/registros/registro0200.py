@@ -23,8 +23,6 @@ class Registro0200Service:
         partes = (partes + [None] * 13)[:13]
 
         cod_item = partes[1]
-        if cod_item is not None:
-            cod_item = cod_item.lstrip("0") or "0"
 
         dados = {
             "reg": partes[0],
@@ -44,11 +42,16 @@ class Registro0200Service:
             "empresa_id": self.empresa_id,
             "ativo": True
         }
+        tipo_item = str(dados.get("tipo_item") or "").zfill(2)
+        cod_list = str(dados.get("cod_list") or "").strip()
+        if not dados.get("cod_ncm") and tipo_item not in ("09", "99") and not cod_list:
+            print(f"[WARN 0200] cod_ncm vazio: cod_item={dados.get('cod_item')} tipo_item={tipo_item} cod_list={cod_list}")
         ok, erros = ValidadorService.validarRegistro0200(dados)
         if ok:
             self.cod_item_atual = dados["cod_item"]
             self.lote.append(dados)
         else:
+            print(f"[WARN 0200] Registro ignorado: cod_item={dados.get('cod_item')} erros={erros}")
             return
 
     def toDataframe(self) -> pd.DataFrame:

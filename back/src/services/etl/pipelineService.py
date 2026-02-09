@@ -7,7 +7,6 @@ from ....src.repositories.fornecedoresRepo.fornecedorRepository import Fornecedo
 
 from sqlalchemy.orm import sessionmaker
 
-
 class PipelineService:
     def __init__(self, session, empresa_id: int, arquivos: List[str],progress_callback: Optional[Callable[[int, str], None]] = None):
         self.session = session

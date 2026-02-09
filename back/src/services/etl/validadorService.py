@@ -28,8 +28,8 @@ class ValidadorService:
             erros.append("0200 sem código de item.")
         if not registro.get("descr_item"):
             erros.append("0200 sem descrição de item.")
-        if not registro.get("cod_ncm"):
-            erros.append("0200 sem código NCM.")
+        # NCM pode estar vazio em alguns arquivos (ex.: serviços, ajustes).
+        # Não bloquear persistência por ausência de NCM; tratar como warning no processamento.
         return (len(erros) == 0, erros)
 
     @staticmethod
