@@ -1,6 +1,8 @@
 import time
 import flet as ft
 import threading
+import multiprocessing
+import sys
 from front.src.views.mainView import MainView
 from front.src.views.empresaView import EmpresaView
 from front.src.views.cadastroView import CadastroView
@@ -102,6 +104,17 @@ def main(page: ft.Page):
         daemon=True,
     ).start()
 
+def run_app():
+    ft.app(target=main)
+
+def isMultiprocessingChildProcess() -> bool:
+    return any(arg.startswith("--multiprocessing-fork") for arg in sys.argv[1:])
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    multiprocessing.freeze_support()
+
+    # Evita inicialização da UI quando o processo foi criado apenas para bootstrap interno.
+    if getattr(sys, "frozen", False) and isMultiprocessingChildProcess():
+        sys.exit(0)
+
+    run_app()
