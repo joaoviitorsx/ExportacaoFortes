@@ -1,8 +1,27 @@
 from back.src.controllers.fsController import FsController
 from typing import Callable, Optional
+import os
 from sqlalchemy.exc import OperationalError
 
 class FsRoute:
+    @staticmethod
+    def _normalizarOutputPath(output_path: str) -> str:
+        if not output_path:
+            raise ValueError("Caminho de saída não informado.")
+
+        path = os.path.abspath(os.path.expanduser(output_path.strip()))
+
+        if os.path.isdir(path):
+            path = os.path.join(path, "Exportacao_Fortes.fs")
+
+        if not path.lower().endswith(".fs"):
+            path = f"{path}.fs"
+
+        dir_name = os.path.dirname(path) or "."
+        if not os.path.isdir(dir_name):
+            raise ValueError("Diretório de saída inválido ou inexistente.")
+
+        return path
     
     @staticmethod
     def processarFs(empresa_id: int,  arquivos: list[str], output_path: str, progress_callback: Optional[Callable[[int, str], None]] = None):
@@ -59,10 +78,13 @@ class FsRoute:
     @staticmethod
     def baixarFs(empresa_id: int, arquivos: list[str], output_path: str, progress_callback: Optional[Callable[[int, str], None]] = None):
         try:
+            output_path_normalizado = FsRoute._normalizarOutputPath(output_path)
+            print(f"[DEBUG] FsRoute.baixarFs output_path normalizado: {output_path_normalizado}")
+
             controller = FsController(
                 empresa_id=empresa_id,
                 arquivos=arquivos,
-                output_path=output_path,
+                output_path=output_path_normalizado,
                 progress_callback=progress_callback
             )
             

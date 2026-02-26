@@ -22,9 +22,46 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     processado_ok = False
 
     uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
+    save_picker = getattr(page, "_save_picker_fs", None)
+    if save_picker is None:
+        save_picker = ft.FilePicker()
+        page._save_picker_fs = save_picker
+        page.overlay.append(save_picker)
 
     btnProcessar = ActionButton("Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True)
     btnDownload = ActionButton("Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False)
+
+    def normalizarCaminhoSaida(path_raw: str) -> str:
+        if not path_raw:
+            raise ValueError("Caminho de saída inválido.")
+
+        path = os.path.abspath(os.path.expanduser(path_raw.strip()))
+
+        if os.path.isdir(path):
+            path = os.path.join(path, "Exportacao_Fortes.fs")
+
+        if not path.lower().endswith(".fs"):
+            path = f"{path}.fs"
+
+        dir_name = os.path.dirname(path) or "."
+        if not os.path.isdir(dir_name):
+            raise ValueError("Diretório inválido ou inexistente.")
+
+        return path
+
+    def extrairCaminhoDownload(result: ft.FilePickerResultEvent) -> str | None:
+        path = getattr(result, "path", None)
+        if path:
+            return path
+
+        files = getattr(result, "files", None) or []
+        if files:
+            arquivo = files[0]
+            file_path = getattr(arquivo, "path", None)
+            if file_path:
+                return file_path
+
+        return None
 
     def resetarView():
         nonlocal selected_files, processado_ok
@@ -94,13 +131,23 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
         if is_linux():
             abrirModalSalvarLinux()
         else:
-            picker = ft.FilePicker(on_result=salvarArquivo)
-            page.overlay.append(picker)
-            picker.save_file(file_name="Exportacao_Fortes.fs")
+            save_picker.save_file(file_name="Exportacao_Fortes.fs")
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
-        if result.path:
-            iniciarDownload(result.path)
+        path_raw = extrairCaminhoDownload(result)
+        print(f"[DEBUG] Resultado save_file recebido: path={getattr(result, 'path', None)}")
+
+        if not path_raw:
+            notificacao(page, "Aviso", "Download cancelado.", tipo="info")
+            return
+
+        try:
+            path = normalizarCaminhoSaida(path_raw)
+        except ValueError as e:
+            notificacao(page, "Erro", str(e), tipo="erro")
+            return
+
+        iniciarDownload(path)
 
     def abrirModalSalvarLinux():
         campo = ft.TextField(
@@ -117,22 +164,15 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
                 page.update()
                 return
 
-            path = os.path.expanduser(path_raw)
-
-            if os.path.isdir(path):
-                path = os.path.join(path, "Exportacao_Fortes.fs")
-
-            if not path.lower().endswith(".fs"):
-                path = f"{path}.fs"
-
-            dir_name = os.path.dirname(path)
-            if not os.path.isdir(dir_name):
-                campo.error_text = "Diretório inválido ou inexistente"
+            try:
+                path = normalizarCaminhoSaida(path_raw)
+            except ValueError as e:
+                campo.error_text = str(e)
                 page.update()
                 return
 
             campo.error_text = None
-            iniciarDownload(os.path.abspath(path))
+            iniciarDownload(path)
 
         dialog = ft.AlertDialog(
             modal=True,
@@ -157,6 +197,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
     def iniciarDownload(path):
         fecharDialog()
+        print(f"[DEBUG] Iniciando geração FS em: {path}")
         uploaderCard.showDownloadProgress(True)
 
         def executar():
@@ -178,6 +219,7 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
         threading.Thread(target=executar, daemon=True).start()
 
+    save_picker.on_result = salvarArquivo
     btnProcessar.on_click = processar
     btnDownload.on_click = escolherLocal
 

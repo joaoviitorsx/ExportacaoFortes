@@ -18,6 +18,24 @@ class FsController:
         if self.progress_callback:
             self.progress_callback(percent, mensagem)
 
+    def normalizarOutputPath(self) -> str:
+        if not self.output_path:
+            raise ValueError("Caminho de saída não informado para geração do arquivo .fs.")
+
+        path = os.path.abspath(os.path.expanduser(self.output_path.strip()))
+
+        if os.path.isdir(path):
+            path = os.path.join(path, "Exportacao_Fortes.fs")
+
+        if not path.lower().endswith(".fs"):
+            path = f"{path}.fs"
+
+        dir_name = os.path.dirname(path) or "."
+        if not os.path.isdir(dir_name):
+            raise ValueError("Diretório de saída inválido ou inexistente.")
+
+        return path
+
     def processar(self) -> list:
         etapas = []
         session_icms = None
@@ -127,9 +145,13 @@ class FsController:
                 session_fs.close()
 
     def arquivoFs(self) -> str:
-        gerador = GerarArquivo(self.empresa_id, self.output_path)
+        output_path_normalizado = self.normalizarOutputPath()
+        print(f"[DEBUG] FsController.arquivoFs output_path normalizado: {output_path_normalizado}")
+        gerador = GerarArquivo(self.empresa_id, output_path_normalizado)
         try:
             file_path = gerador.gerar()
+            if not file_path or not os.path.exists(file_path):
+                raise FileNotFoundError("Arquivo .fs não foi criado no caminho informado.")
             return file_path
         except Exception as e:
             mensagem_erro = f"Erro ao gerar arquivo .fs: {str(e)}"
