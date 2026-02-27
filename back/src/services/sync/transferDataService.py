@@ -1,4 +1,3 @@
-from sqlalchemy import text
 from ...repositories.transferRepo.empresaRepository import EmpresaRepository
 from ...repositories.transferRepo.produtoRepository import ProdutoRepository
 from ...services.sync.validacaoTransferService import ValidacaoTransferService
@@ -19,8 +18,8 @@ class TransferDataService:
             return
 
         cnpj = empresaDestino["cnpj"]
-        is_matriz = empresaDestino.get("is_matriz", False)
-        matriz_id = empresaDestino.get("matriz_id")
+        is_matriz = bool(empresaDestino.get("is_matriz", False))
+        matriz_id = empresaDestino.get("matriz_id") or empresaDestino["id"]
         empresaIdExport = empresaDestino["id"]
 
         print(f"[INFO] Empresa destino: {empresaDestino['razao_social']} ({cnpj})")
@@ -30,17 +29,12 @@ class TransferDataService:
             cnpj_busca = cnpj
             print(f"[INFO] Empresa é MATRIZ. Buscando produtos próprios.")
         else:
-            # Buscar CNPJ da matriz
-            matriz_sql = text("SELECT cnpj FROM empresas WHERE id = :matriz_id")
-            matriz_result = self.repoEmpresaExport.session.execute(
-                matriz_sql, {"matriz_id": matriz_id}
-            ).first()
-            
-            if not matriz_result:
+            matriz = self.repoEmpresaExport.getID(matriz_id)
+            if not matriz:
                 print(f"[ERRO] Matriz não encontrada (ID: {matriz_id}).")
                 return
-            
-            cnpj_busca = matriz_result.cnpj
+
+            cnpj_busca = matriz["cnpj"]
             print(f"[INFO] Empresa é FILIAL. Buscando produtos da matriz: {cnpj_busca}")
 
         # 3. Mapear para empresa no ICMS
