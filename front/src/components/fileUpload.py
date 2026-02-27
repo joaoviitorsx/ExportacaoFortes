@@ -4,6 +4,7 @@ import flet as ft
 from ..components.card import Card
 from ..components.progressBar import ProgressBar, DownloadProgressBar
 from ..utils.ambiente import is_linux
+from ..utils.filePicker import pick_files_with_fallback
 
 
 class UploadArea(ft.Container):
@@ -157,14 +158,18 @@ class UploadCard(Card):
         if not self.page and e and hasattr(e, "page"):
             self.page = e.page
 
-        if is_linux():
-            self._open_path_modal()
-        else:
-            self.file_picker.pick_files(
-                allow_multiple=True,
-                file_type=ft.FilePickerFileType.CUSTOM,
-                allowed_extensions=["txt"],
-            )
+        if not self.page and self.upload_area.page:
+            self.page = self.upload_area.page
+
+        pick_files_with_fallback(
+            page=self.page,
+            on_result=self.filesPicked,
+            allow_multiple=True,
+            allowed_extensions=["txt"],
+            dialog_title="Selecionar arquivo SPED (.txt)",
+            fallback_open_manual=self._open_path_modal if is_linux() else None,
+            picker=self.file_picker,
+        )
 
     def filesPicked(self, e: ft.FilePickerResultEvent):
         if e.files:

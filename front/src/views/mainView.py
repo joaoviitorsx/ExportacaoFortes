@@ -1,6 +1,7 @@
 import os
 import threading
 import flet as ft
+from urllib.parse import urlparse, unquote
 from front.src.utils.formtador import normalizarEmpresa
 
 from ..components.card import Card
@@ -12,6 +13,7 @@ from ..components.reconnectIndicator import ReconnectIndicator
 from ..routes.fsRoute import FsRoute
 from ..utils.ambiente import is_linux
 from ..utils.cnpjFormatador import formatarCnpj
+from ..utils.filePicker import save_file_with_fallback
 
 
 def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft.View:
@@ -22,20 +24,29 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
     processado_ok = False
 
     uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
-    save_picker = getattr(page, "_save_picker_fs", None)
-    if save_picker is None:
-        save_picker = ft.FilePicker()
-        page._save_picker_fs = save_picker
-        page.overlay.append(save_picker)
 
     btnProcessar = ActionButton("Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True)
     btnDownload = ActionButton("Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False)
+
+    def normalizarPathRetornadoPicker(path_raw: str) -> str:
+        path_limpo = str(path_raw).strip().strip('"').strip("'")
+
+        if path_limpo.lower().startswith("file://"):
+            parsed = urlparse(path_limpo)
+            uri_path = unquote(parsed.path or "")
+            if os.name == "nt" and uri_path.startswith("/") and len(uri_path) > 2 and uri_path[2] == ":":
+                uri_path = uri_path[1:]
+            if uri_path:
+                path_limpo = uri_path
+
+        return path_limpo
 
     def normalizarCaminhoSaida(path_raw: str) -> str:
         if not path_raw:
             raise ValueError("Caminho de saída inválido.")
 
-        path = os.path.abspath(os.path.expanduser(path_raw.strip()))
+        path = normalizarPathRetornadoPicker(path_raw)
+        path = os.path.abspath(os.path.expanduser(path))
 
         if os.path.isdir(path):
             path = os.path.join(path, "Exportacao_Fortes.fs")
@@ -49,7 +60,10 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
         return path
 
-    def extrairCaminhoDownload(result: ft.FilePickerResultEvent) -> str | None:
+    def extrairCaminhoDownload(result: ft.FilePickerResultEvent | None) -> str | None:
+        if result is None:
+            return None
+
         path = getattr(result, "path", None)
         if path:
             return path
@@ -110,6 +124,8 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
             if resposta["status"] == "ok":
                 processado_ok = True
                 btnDownload.visible = True
+                btnDownload.disabled = False
+                btnDownload.on_click = escolherLocal
                 btnProcessar.text = "Processar Novamente"
                 btnProcessar.icon = ft.Icons.REFRESH
                 btnProcessar.disabled = False
@@ -124,18 +140,35 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
         threading.Thread(target=executar, daemon=True).start()
 
     def escolherLocal(e):
+        print("[DEBUG] Clique no botão 'Baixar Arquivo .fs'")
         if not processado_ok:
             notificacao(page, "Erro", "Processamento necessário.", tipo="erro")
             return
 
-        if is_linux():
+        upload_picker = uploaderCard.file_picker
+
+        def restaurarPickerUpload():
+            upload_picker.on_result = uploaderCard.filesPicked
+
+        def abrirFallbackSalvar():
+            restaurarPickerUpload()
             abrirModalSalvarLinux()
-        else:
-            save_picker.save_file(file_name="Exportacao_Fortes.fs")
+
+        upload_picker.on_result = salvarArquivo
+        save_file_with_fallback(
+            page=page,
+            on_result=salvarArquivo,
+            file_name="Exportacao_Fortes.fs",
+            allowed_extensions=["fs"],
+            dialog_title="Salvar arquivo de exportação (.fs)",
+            fallback_open_manual=abrirFallbackSalvar if is_linux() else None,
+            picker=upload_picker,
+        )
 
     def salvarArquivo(result: ft.FilePickerResultEvent):
+        uploaderCard.file_picker.on_result = uploaderCard.filesPicked
         path_raw = extrairCaminhoDownload(result)
-        print(f"[DEBUG] Resultado save_file recebido: path={getattr(result, 'path', None)}")
+        print(f"[DEBUG] Resultado seletor recebido: path={getattr(result, 'path', None)}")
 
         if not path_raw:
             notificacao(page, "Aviso", "Download cancelado.", tipo="info")
@@ -219,7 +252,6 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
         threading.Thread(target=executar, daemon=True).start()
 
-    save_picker.on_result = salvarArquivo
     btnProcessar.on_click = processar
     btnDownload.on_click = escolherLocal
 
