@@ -140,7 +140,7 @@ class UploadCard(Card):
         )
 
         self.content_column = ft.Column(
-            [self.main_content, self.file_picker],
+            [self.main_content],
             spacing=12,
         )
 
@@ -160,6 +160,10 @@ class UploadCard(Card):
 
         if not self.page and self.upload_area.page:
             self.page = self.upload_area.page
+
+        if self.page and self.file_picker not in self.page.overlay:
+            self.page.overlay.append(self.file_picker)
+            self.page.update()
 
         pick_files_with_fallback(
             page=self.page,
@@ -269,9 +273,10 @@ class UploadCard(Card):
             self.files_card.refreshButton.visible = False
             self.update()
 
-    def showUpload(self, e=None):
+    def showUpload(self, e=None, _silent=False):
         self.selected_files = []
         self.selected_paths = []
+        self.upload_area = UploadArea(self._pick_files)
         self.main_content.controls = [
             ft.Text("Selecionar Arquivo SPED", size=15, weight=ft.FontWeight.BOLD),
             ft.Text(
@@ -281,7 +286,13 @@ class UploadCard(Card):
             ),
             self.upload_area,
         ]
-        self.update()
+        if not _silent:
+            if self.on_file_selected:
+                self.on_file_selected([])
+            try:
+                self.update()
+            except Exception:
+                pass
 
     # =========================
     # PROGRESS

@@ -1,7 +1,8 @@
 import os
-import threading
+import re
+import asyncio
+from queue import Empty, Queue
 import flet as ft
-from urllib.parse import urlparse, unquote
 from front.src.utils.formtador import normalizarEmpresa
 
 from ..components.card import Card
@@ -11,9 +12,7 @@ from ..components.actionButton import ActionButton
 from ..components.notificacao import notificacao
 from ..components.reconnectIndicator import ReconnectIndicator
 from ..routes.fsRoute import FsRoute
-from ..utils.ambiente import is_linux
 from ..utils.cnpjFormatador import formatarCnpj
-from ..utils.filePicker import save_file_with_fallback
 
 
 def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft.View:
@@ -22,240 +21,206 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
     selected_files = []
     processado_ok = False
+    processando = False
+    modo_botao = "processar"
+    nome_display, cnpj_display = normalizarEmpresa(nome_empresa, empresa_cnpj)
 
     uploaderCard = UploadCard(on_file_selected=lambda f: fileSelected(f))
 
     btnProcessar = ActionButton("Processar Arquivo", icon=ft.Icons.PLAY_ARROW, disabled=True)
-    btnDownload = ActionButton("Baixar Arquivo .fs", icon=ft.Icons.DOWNLOAD, visible=False)
 
-    def normalizarPathRetornadoPicker(path_raw: str) -> str:
-        path_limpo = str(path_raw).strip().strip('"').strip("'")
+    def voltarParaEmpresas(e):
+        page.go("/")
 
-        if path_limpo.lower().startswith("file://"):
-            parsed = urlparse(path_limpo)
-            uri_path = unquote(parsed.path or "")
-            if os.name == "nt" and uri_path.startswith("/") and len(uri_path) > 2 and uri_path[2] == ":":
-                uri_path = uri_path[1:]
-            if uri_path:
-                path_limpo = uri_path
+    def sanitizarNomeArquivo(texto: str) -> str:
+        nome = (texto or "").strip()
+        if not nome:
+            return "Empresa"
+        nome = re.sub(r'[<>:"/\\|?*\x00-\x1F]', "", nome)
+        nome = re.sub(r"\s+", " ", nome).strip().strip(".")
+        return nome or "Empresa"
 
-        return path_limpo
+    def extrairFilialCnpj(cnpj: str) -> str:
+        digitos = "".join(ch for ch in str(cnpj or "") if ch.isdigit())
+        if len(digitos) == 14:
+            filial_quatro = digitos[8:12]
+            if filial_quatro.isdigit():
+                return f"{int(filial_quatro) % 100:02d}"
+        return "00"
 
-    def normalizarCaminhoSaida(path_raw: str) -> str:
-        if not path_raw:
-            raise ValueError("Caminho de saída inválido.")
+    def construirNomeArquivoFs() -> str:
+        razao = sanitizarNomeArquivo(nome_display or nome_empresa)
+        filial = extrairFilialCnpj(cnpj_display)
+        return f"ExportacaoFortes-{razao}-{filial}.fs"
 
-        path = normalizarPathRetornadoPicker(path_raw)
-        path = os.path.abspath(os.path.expanduser(path))
+    def construirCaminhoSaidaAutomatico(arquivos: list[str]) -> str:
+        if not arquivos:
+            raise ValueError("Nenhum arquivo SPED selecionado.")
 
-        if os.path.isdir(path):
-            path = os.path.join(path, "Exportacao_Fortes.fs")
+        primeiro_arquivo = os.path.abspath(os.path.expanduser(arquivos[0]))
+        diretorio_saida = os.path.dirname(primeiro_arquivo) or "."
 
-        if not path.lower().endswith(".fs"):
-            path = f"{path}.fs"
+        if not os.path.isdir(diretorio_saida):
+            raise ValueError("Diretório do arquivo SPED não encontrado.")
 
-        dir_name = os.path.dirname(path) or "."
-        if not os.path.isdir(dir_name):
-            raise ValueError("Diretório inválido ou inexistente.")
+        return os.path.join(diretorio_saida, construirNomeArquivoFs())
 
-        return path
+    def definirModoBotaoProcessar():
+        nonlocal modo_botao
+        modo_botao = "processar"
+        btnProcessar.text = "Processar Arquivo"
+        btnProcessar.icon = ft.Icons.PLAY_ARROW
+        btnProcessar.disabled = not bool(selected_files)
 
-    def extrairCaminhoDownload(result: ft.FilePickerResultEvent | None) -> str | None:
-        if result is None:
-            return None
-
-        path = getattr(result, "path", None)
-        if path:
-            return path
-
-        files = getattr(result, "files", None) or []
-        if files:
-            arquivo = files[0]
-            file_path = getattr(arquivo, "path", None)
-            if file_path:
-                return file_path
-
-        return None
+    def definirModoBotaoResetar():
+        nonlocal modo_botao
+        modo_botao = "resetar"
+        btnProcessar.text = "Processar Novamente"
+        btnProcessar.icon = ft.Icons.REFRESH
+        btnProcessar.disabled = False
 
     def resetarView():
-        nonlocal selected_files, processado_ok
+        nonlocal selected_files, processado_ok, processando, modo_botao
         selected_files = []
         processado_ok = False
-        uploaderCard.showUpload()
+        processando = False
+        modo_botao = "processar"
+        uploaderCard.showUpload(_silent=True)
         btnProcessar.text = "Processar Arquivo"
         btnProcessar.icon = ft.Icons.PLAY_ARROW
         btnProcessar.disabled = True
-        btnDownload.visible = False
         page.update()
 
     def fileSelected(filenames):
         nonlocal selected_files, processado_ok
-        selected_files = filenames
+        selected_files = list(filenames or [])
         processado_ok = False
-        btnProcessar.disabled = False
-        btnDownload.visible = False
+        if not processando:
+            definirModoBotaoProcessar()
         page.update()
 
-    def processar(e):
-        nonlocal processado_ok
+    def aplicarProgressoPendente(fila_progresso: Queue):
+        while True:
+            try:
+                percent, message = fila_progresso.get_nowait()
+            except Empty:
+                break
 
-        if processado_ok:
-            resetarView()
-            return
+            try:
+                percent_norm = int(percent)
+            except Exception:
+                percent_norm = 0
 
-        if not selected_files:
-            notificacao(page, "Erro", "Nenhum arquivo selecionado.", tipo="erro")
-            return
+            percent_norm = max(0, min(100, percent_norm))
+            uploaderCard.updateProgress(percent_norm, str(message))
 
-        btnProcessar.disabled = True
-        uploaderCard.disableRefresh()
-        uploaderCard.showProgress(True)
-        page.update()
+    async def executarProcessamentoAsync(arquivos_processamento: list[str]):
+        nonlocal processado_ok, processando
+        fila_progresso = Queue()
 
-        def executar():
-            nonlocal processado_ok
-            resposta = FsRoute.processarFs(
-                empresa_id=id,
-                arquivos=selected_files,
-                output_path=None,
-                progress_callback=uploaderCard.updateProgress,
-            )
-
-            if resposta["status"] == "ok":
-                processado_ok = True
-                btnDownload.visible = True
-                btnDownload.disabled = False
-                btnDownload.on_click = escolherLocal
-                btnProcessar.text = "Processar Novamente"
-                btnProcessar.icon = ft.Icons.REFRESH
-                btnProcessar.disabled = False
-                notificacao(page, "Sucesso", resposta["mensagem"], tipo="sucesso")
-            else:
-                uploaderCard.showUpload()
-                btnProcessar.disabled = False
-                notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
-
-            page.update()
-
-        threading.Thread(target=executar, daemon=True).start()
-
-    def escolherLocal(e):
-        print("[DEBUG] Clique no botão 'Baixar Arquivo .fs'")
-        if not processado_ok:
-            notificacao(page, "Erro", "Processamento necessário.", tipo="erro")
-            return
-
-        upload_picker = uploaderCard.file_picker
-
-        def restaurarPickerUpload():
-            upload_picker.on_result = uploaderCard.filesPicked
-
-        def abrirFallbackSalvar():
-            restaurarPickerUpload()
-            abrirModalSalvarLinux()
-
-        upload_picker.on_result = salvarArquivo
-        save_file_with_fallback(
-            page=page,
-            on_result=salvarArquivo,
-            file_name="Exportacao_Fortes.fs",
-            allowed_extensions=["fs"],
-            dialog_title="Salvar arquivo de exportação (.fs)",
-            fallback_open_manual=abrirFallbackSalvar if is_linux() else None,
-            picker=upload_picker,
-        )
-
-    def salvarArquivo(result: ft.FilePickerResultEvent):
-        uploaderCard.file_picker.on_result = uploaderCard.filesPicked
-        path_raw = extrairCaminhoDownload(result)
-        print(f"[DEBUG] Resultado seletor recebido: path={getattr(result, 'path', None)}")
-
-        if not path_raw:
-            notificacao(page, "Aviso", "Download cancelado.", tipo="info")
-            return
+        def progress_callback(percent: int, message: str):
+            fila_progresso.put((percent, message))
 
         try:
-            path = normalizarCaminhoSaida(path_raw)
-        except ValueError as e:
-            notificacao(page, "Erro", str(e), tipo="erro")
-            return
+            loop = asyncio.get_running_loop()
+            future_processamento = loop.run_in_executor(
+                None,
+                lambda: FsRoute.processarFs(
+                    empresa_id=id,
+                    arquivos=arquivos_processamento,
+                    output_path=None,
+                    progress_callback=progress_callback,
+                ),
+            )
 
-        iniciarDownload(path)
+            while not future_processamento.done():
+                aplicarProgressoPendente(fila_progresso)
+                await asyncio.sleep(0.08)
 
-    def abrirModalSalvarLinux():
-        campo = ft.TextField(
-            label="Salvar como",
-            hint_text="/home/usuario/Exportacao_Fortes.fs",
-            autofocus=True,
-        )
+            aplicarProgressoPendente(fila_progresso)
+            resposta = await future_processamento
 
-        def confirmar(e):
-            path_raw = campo.value.strip()
-
-            if not path_raw:
-                campo.error_text = "Informe o caminho para salvar o arquivo"
-                page.update()
+            if resposta["status"] != "ok":
+                uploaderCard.showUpload(_silent=True)
+                definirModoBotaoProcessar()
+                notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
                 return
 
             try:
-                path = normalizarCaminhoSaida(path_raw)
-            except ValueError as e:
-                campo.error_text = str(e)
-                page.update()
+                caminho_saida = construirCaminhoSaidaAutomatico(arquivos_processamento)
+            except ValueError as error_path:
+                uploaderCard.showUpload(_silent=True)
+                definirModoBotaoProcessar()
+                notificacao(page, "Erro", str(error_path), tipo="erro")
                 return
 
-            campo.error_text = None
-            iniciarDownload(path)
-
-        dialog = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Salvar arquivo"),
-            content=campo,
-            actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: fecharDialog()),
-                ft.ElevatedButton("Salvar", on_click=confirmar),
-            ],
-        )
-
-        if dialog not in page.overlay:
-            page.overlay.append(dialog)
-        page.dialog = dialog
-        dialog.open = True
-        page.update()
-
-    def fecharDialog():
-        if page.dialog:
-            page.dialog.open = False
-        page.update()
-
-    def iniciarDownload(path):
-        fecharDialog()
-        print(f"[DEBUG] Iniciando geração FS em: {path}")
-        uploaderCard.showDownloadProgress(True)
-
-        def executar():
-            resposta = FsRoute.baixarFs(
-                empresa_id=id,
-                arquivos=selected_files,
-                output_path=path,
-                progress_callback=None,
-            )
-
-            if resposta["status"] == "ok":
-                uploaderCard.finishDownloadProgress()
-                notificacao(page, "Sucesso", f"Arquivo salvo em {path}", tipo="sucesso")
-            else:
-                uploaderCard.showUpload()
-                notificacao(page, "Erro", resposta["mensagem"], tipo="erro")
-
+            uploaderCard.showDownloadProgress(True)
             page.update()
 
-        threading.Thread(target=executar, daemon=True).start()
+            resposta_download = await loop.run_in_executor(
+                None,
+                lambda: FsRoute.baixarFs(
+                    empresa_id=id,
+                    arquivos=arquivos_processamento,
+                    output_path=caminho_saida,
+                    progress_callback=None,
+                ),
+            )
 
+            if resposta_download["status"] == "ok":
+                processado_ok = True
+                uploaderCard.finishDownloadProgress()
+                definirModoBotaoResetar()
+                notificacao(page, "Sucesso", f"Arquivo salvo em {caminho_saida}", tipo="sucesso")
+            else:
+                uploaderCard.showUpload(_silent=True)
+                definirModoBotaoProcessar()
+                notificacao(page, "Erro", resposta_download["mensagem"], tipo="erro")
+        except Exception as e:
+            uploaderCard.showUpload(_silent=True)
+            definirModoBotaoProcessar()
+            notificacao(page, "Erro", f"Falha ao processar arquivo: {str(e)}", tipo="erro")
+        finally:
+            processando = False
+            if not processado_ok and modo_botao != "resetar":
+                definirModoBotaoProcessar()
+            try:
+                page.update()
+            except Exception as ex:
+                print(f"[ERRO] page.update no finally falhou: {ex}")
+
+    def processar(e):
+        nonlocal processado_ok, processando
+
+        try:
+            if processando:
+                return
+
+            if modo_botao == "resetar" or processado_ok:
+                resetarView()
+                return
+
+            if not selected_files:
+                notificacao(page, "Erro", "Nenhum arquivo selecionado.", tipo="erro")
+                return
+
+            arquivos_processamento = list(selected_files)
+            processando = True
+            btnProcessar.disabled = True
+            uploaderCard.disableRefresh()
+            uploaderCard.showProgress(True)
+            uploaderCard.progress.start()
+            page.update()
+            page.run_task(executarProcessamentoAsync, arquivos_processamento)
+        except Exception as ex:
+            print(f"[ERRO] Erro no handler processar: {ex}")
+            import traceback
+            traceback.print_exc()
+            processando = False
+            page.update()
+
+    definirModoBotaoProcessar()
     btnProcessar.on_click = processar
-    btnDownload.on_click = escolherLocal
-
-    nome_display, cnpj_display = normalizarEmpresa(nome_empresa, empresa_cnpj)
 
     empresaCard = Card(
         title="Empresa Selecionada",
@@ -271,10 +236,18 @@ def MainView(page: ft.Page, id: int, nome_empresa: str, empresa_cnpj: str) -> ft
 
     main_column = ft.Column(
         [
+            ft.Container(
+                alignment=ft.alignment.center_left,
+                content=ft.TextButton(
+                    "Voltar",
+                    icon=ft.Icons.ARROW_BACK,
+                    on_click=voltarParaEmpresas,
+                ),
+            ),
             Header(),
             empresaCard,
             uploaderCard,
-            ft.Row([btnProcessar, btnDownload], alignment=ft.MainAxisAlignment.CENTER),
+            ft.Row([btnProcessar], alignment=ft.MainAxisAlignment.CENTER),
             Header.footer(),
         ],
         spacing=20,
